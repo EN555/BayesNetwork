@@ -1,28 +1,30 @@
 package ex0;
 
 import java.awt.List;
+import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.StringTokenizer;
 
 public class Test {
-	public static void generatePermutations(LinkedList<LinkedList<String>> lists, LinkedList<String> result, int depth, String current) {
+	public static LinkedList<String> generatePermutations(LinkedList<LinkedList<String>> lists, LinkedList<String> result, int depth, String current) {
 	    if (depth == lists.size()) {
 	        result.add(current);
-	        return;
+	        return 	result;
 	    }
 	    
 	    for (int i = 0; i < lists.get(depth).size(); i++) {
-	        generatePermutations(lists, result, depth + 1, current + lists.get(depth).get(i)+" ");
+	        generatePermutations(lists, result, depth + 1, current + lists.get(depth).get(i)+ " ");
 	    }
+	    return result;
 	}
 	public static void main(String[] args) {
-
-		Network net = new Network();
-		Node node1 = net.addNode("Var A");
-		node1.addCurr("Values: true,false");
-		node1.addPar("Parents: none");
-		node1.addProb("=true,0.1");
+//first network
+//		Network net = new Network();
+//		Node node1 = net.addNode("Var A");
+//		node1.addCurr("Values: true,false");
+//		node1.addPar("Parents: none");
+//		node1.addProb("=true,0.1");
 //		Node node2 = net.addNode("Var B");
 //		node2.addCurr("Values: set,noset,maybe");
 //		node2.addPar("Parents: none");
@@ -36,73 +38,108 @@ public class Test {
 //		node3.addProb("false,set,=go,0.55,=stay,0.15");
 //		node3.addProb("false,noset,=go,0.28,=stay,0.3");
 //		node3.addProb("false,maybe,=go,0.45,=stay,0.25");
-//		System.out.println(node3.getCpt().toString());
+//		System.out.println(node1.getCpt().toString());
 //		System.out.println("/////");
 //		System.out.println(node2.getCpt().toString());
+//		System.out.println("/////");
+//		System.out.println(node3.getCpt().toString());
+//System.out.println("////////////////////////////////////////////////////////////////////////////////////////////////////////////");
+//second network
+		Network net2 = new Network();
+		Node node11 = net2.addNode("Var B");
+		node11.addCurr("Values: true,false");
+		node11.addPar("Parents: none");
+		node11.addProb("=true,0.1");
+		Node node22 = net2.addNode("Var E");
+		node22.addCurr("Values: true,false");
+		node22.addPar("Parents: none");
+		node22.addProb("=true,0.002");
+		Node node33 = net2.addNode("Var A");
+		node33.addCurr("Values: true,false");
+		node33.addPar("Parents: B,E");
+		node33.addProb("true,true,=true,0.95");
+		node33.addProb("true,false,=true,0.94");
+		node33.addProb("false,true,=true,0.29");
+		node33.addProb("false,false,=true,0.001");
+//		Node node44 = net2.addNode("Var J");
+//		node44.addCurr("Values: true,false");
+//		node44.addPar("Parents: A");
+//		node44.addProb("true,=true,0.9");
+//		node44.addProb("false,=true,0.05");
+//		Node node55 = net2.addNode("Var M");
+//		node55.addCurr("Values: true,false");
+//		node55.addPar("Parents: A");
+//		node55.addProb("true,=true,0.7");
+//		node55.addProb("false,=true,0.01");
+		System.out.println(node11.getCpt().toString());
 		System.out.println("/////");
-		System.out.println(node1.getCpt().toString());
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//		Network c= new Network();
-//		Node b = new Node("var b" , c);
-//	Object arr [] = new Object[3];
-//	arr[0] = "hello"; 
-//	arr[1] = 2;
-//	arr [2]=3;
+		System.out.println(node22.getCpt().toString());
+		System.out.println("/////");
+		System.out.println(node33.getCpt().toString());
+//System.out.println("/////");
+//System.out.println(node44.getCpt().toString());
+//System.out.println("/////");
+//System.out.println(node55.getCpt().toString());
+//		
+//////////////////////////////////////////////////////////////////////
+//		LinkedList<LinkedList<String>> str = new LinkedList<LinkedList<String>>();
+//		LinkedList<String> a = new LinkedList<String>();
+//		LinkedList<String> b = new LinkedList<String>();
+//		LinkedList<String> c = new LinkedList<String>();
+//		a.add("1");
+//		a.add("3");
+//		b.add("2");
+//		c.add("4");
+//		c.add("5");
+//		str.add(a);
+//		str.add(b);
+//		str.add(c);
+//		LinkedList<String> res = new LinkedList<String>();
+//		LinkedList<String> vert = generatePermutations(str, res, 0, "");
+//		ListIterator<String> iter = vert.listIterator();
+//		while(iter.hasNext()) {
+//			System.out.println(iter.next());
+//		}
+		
+////////////////////////////////////////////////////////////////////////////////		
+		Queries quer = new Queries(net2);
+//		LinkedList<Node> lis = new LinkedList<Node>();
+//		lis.add(node2);
+//		lis.add(node3);
+//		LinkedList<String> res = new LinkedList<String>();
+//		res = quer.generatePerNode(lis);
+//		ListIterator<String> iter = res.listIterator();
+//		while(iter.hasNext()) {
+//			System.out.println(iter.next());
+//		}
+//		String str = var.replaceAll("[^A-Za-z]"," ");
+//		String [] split = str.split(" ");
+//		System.out.println(str);
+//		System.out.println(split.length);
+//		for(int i= ; i<str.length() ;) {
+//			System.out.println(split[i]);
+//			if(i+ 2 <str.length()) {
+//				i += 2;
+//			}
+//			else {
+//				i = str.length();			}
+//		}
+//		System.out.println("//");
+//for(int i = 3 ; i<split.length ; i+=2) {
+//	if(i<split.length) {
+//	System.out.println(split[i]);
+//	}
 //	
-//	for(int i = 0 ;i< 3 ; i++)
-//		System.out.println(arr[i]);
-//		System.out.println("////");
-//		String s= "=true,0.1";
-//		String co = s.split("=")[0];		//extract the substring that contain the condition
-//		System.out.println(co + "----");
-//		StringTokenizer ou = new StringTokenizer(co ,",");
-//		String condition="";				//only the condition of the condition
-//		while(ou.hasMoreTokens()) {
-//			condition+= ou.nextToken()+ " ";
-//		}
-//		System.out.println(condition+ "----");
-//		String part = s.substring(co.length()+1);		//create array with all the depended variables
-//		System.out.println(part);
-//		String str = part.replaceAll("[^A-Za-z]"," ");
-//		String [] str_var = str.split(" ");
-//		String[] numbers = s.replaceAll("[^0-9.]+", " ").trim().split(" ");		//extract all the numbers
-//		Double [] doub = new Double[numbers.length];
-//	//	System.out.println(doub[0]);
-//		int loc= 0;
-//		for(String it : numbers) 
-//			doub[loc++] = Double.parseDouble(it);		
-		
-		
-		
-/////////////////////////////////////////////
-		
-		
-		
-//		StringTokenizer s = new StringTokenizer("true,set,=go,0.25,=stay,0.7" , " //,//=");
-//		while(s.hasMoreTokens()){
-//			System.out.print(s.nextToken() + " ");
-//		}
-//		String st = "true,maybe,=go,0.3,=stay,0.2"; 
-//		String sub = st.split(",=")[0];
-//		StringTokenizer s = new StringTokenizer(sub , ",");
-//		String p = " ";
-//		while(s.hasMoreTokens()){
-//			p+= s.nextToken()+ " ";
-//		}
-//		System.out.println(p);
-//		String part = st.substring(sub.length());
-//		System.err.println("////");
-//		String result = part.replaceAll("[^A-Za-z]"," ");
-//		String [] res = result.split(" ");
-//		for(String l : res)
-//			System.out.print(l+ " ");
-//		System.out.println();
-//		System.out.println("////");
-//		String[] numbers = st.replaceAll("[^0-9.]+", " ").trim().split(" ");
-//		for(String num : numbers)
-//			System.out.print(num + " ");
+//}
+//System.out.println("////");
+String var = "P(A=false|B=false,E=false),1";		
+//LinkedList<String> per =quer.parseProb(var);
+//ListIterator<String> itera = per.listIterator();
+//while(itera.hasNext()) {
+//	System.out.println(itera.next());
+//}
+System.out.println(quer.parseProb(var));
 	}
+	
 
 }

@@ -1,5 +1,6 @@
 package ex0;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -13,6 +14,11 @@ public class Network {
 		
 		this.map = new HashMap<String, Node>();			//contain all the nodes of the network
 	}
+	/**
+	 * create node
+	 * @param name of the node
+	 * @return this node
+	 */
 	public Node addNode(String node)
 	{
 		StringTokenizer str = new StringTokenizer(node, " ");	
@@ -25,6 +31,12 @@ public class Network {
 	
 	public HashMap<String, Node> getMap(){
 		return this.map;
+	}
+	public Collection<Node> getNodeCollection(){
+		return this.map.values();
+	}
+	public Node getNode(String name){
+		return this.map.get(name);
 	}
 
 }
