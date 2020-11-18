@@ -10,6 +10,9 @@ import java.util.StringTokenizer;
 
 public class Queries {
 	Network net;
+	private int numOfMul=0;
+	private int numOfAdd=0;
+	
 	
 	public Queries(Network net) {
 		this.net = net;
@@ -27,7 +30,9 @@ public class Queries {
 	}
 	
 	// P(B=true|J=true,M=true),1
-	public Double parseProb(String var) {
+	public String parseProb(String var) {
+		this.numOfAdd=0;			//initial the number of operation
+		this.numOfMul=0;
 		Double prob= 0.0;
 		int algoNum = Integer.parseInt(var.replaceAll("[^0-9]", ""));		//the number of the algo to execute
 		//extract the name of the node
@@ -36,6 +41,21 @@ public class Queries {
 		String depend = strVar.split(" ")[1] +" " +strVar.split(" ")[2];
 		Node node = this.net.getNode(name);		//the main node
 		String [] spl = strVar.split(" ");
+	////check if the dep exist  		///////////////////////
+		String t ="";
+		for(int i= 3 ; i< spl.length; i++) {
+			if(i<spl.length-1) {
+				t+= spl[i]+ " ";
+			}
+			else {
+				t+=spl[i];
+			}
+		}
+		Double check = findNum(node , depend , t);
+		if(check != -1) {
+			return String.valueOf(check)+"," + numOfAdd + "," + numOfMul;
+		}
+		//////////
 		LinkedList<String> ll = new LinkedList<String>();
 		for(int i= 3 ; i< spl.length ; i+=2) {
 			ll.add(spl[i]);
@@ -74,7 +94,13 @@ public class Queries {
 		}																//we got the denominator and numerator of the equation
 		Double deno=calCond(denominator); 
 		Double nemo=calCond(numerator);
-		return nemo/(deno+nemo);
+		Double result = nemo/(nemo+deno);
+		String cal= String.valueOf(result);
+		numOfAdd++;
+		if(cal.length() >=7) {			//check the size of the return
+			cal.substring(0,7);
+		}
+		return cal +"," + numOfAdd + ","+ numOfMul;		//????
 		
 		
 	}
@@ -84,6 +110,39 @@ public class Queries {
 	 * @return linkedlist with the name of the node and his variables
 	 * at every index of the linkedlist we get name + one variable
 	 */
+	public Double findNum(Node node ,String dep ,String cond) { //dep = C run | cond = A go B stay 
+		Double num = 0.0;
+		 LinkedList<Node> parents = node.getParents();
+		 String str ="";
+		 ListIterator<Node> iter = parents.listIterator();
+		 String [] condition = cond.split(" ");
+		 String spec="";
+		 
+		 while(iter.hasNext()) {		
+			 String name = iter.next().getName();
+			 for(int v=0 ; v <condition.length ; v++) {
+				 if(condition[v].equals(name)) {
+				 spec+= name+ " "+ condition[v+1]+" ";
+				 }
+			 }
+		 }
+		 String state = dep.split(" ")[1];
+		 if(node.getCpt().depth == 2) {
+			 return -1.0;
+		 }
+		 else {
+		for(int i =1 ; i< node.getCpt().depth; i++) {
+			if(((String)node.cpt.mat[i][0]).equals(spec)) {
+			for(int j =1; j <node.getCurrVar().size()+1 ; j++) {
+				if(((String)node.cpt.mat[0][j]).equals(state)) {
+					return (Double)node.cpt.mat[i][j];
+					}
+				}			
+			}
+		}
+		 }
+		return -1.0;			//if not found
+	}
 	public LinkedList<String> generatePerNode(LinkedList<Node> list){			//return all the permutation of lack nodes
 		
 		LinkedList<LinkedList<String>> str  =new LinkedList<LinkedList<String>>();			//to restore all the permutation per node
@@ -144,20 +203,36 @@ public class Queries {
 		}
 				}
 		}
+			if(prob== 0.0)			//check if we got the probability of 0
+				return 1.0;
 		return prob;
 	}
 	public Double calCond(LinkedList<String> str) {
 		Double prob= 0.0;
 		Double mul=1.0;
 		ListIterator<String> iter= str.listIterator();
+		int count = 0;
 		while(iter.hasNext()){
 		String s= iter.next();
 		String [] split= s.split(" ");
 		for(int i= 0 ; i< split.length ; i+=2) {
-		mul *= findParent(split[i],split[i+1] , split);	
+		if(i==0) {
+			mul = findParent(split[i],split[i+1] , split);			//at the first time it's only put it in without multiplication
 		}
-		prob+=mul;
+		else {
+			mul *= findParent(split[i],split[i+1] , split);
+			numOfMul++;
+		}
+		}
+		if(count == 0) {											//if it's the first time only put it without to use at add operation
+			prob = mul;
+		}
+		else {
+			prob +=mul;
+			numOfAdd++;
+		}
 		mul=1.0;
+		count++;
 		}
 		return prob;
 	}
@@ -173,13 +248,5 @@ public class Queries {
 		}
 		return lack;
 	}
-//	public String toString() {
-//		String s ="";	
-//		ListIterator<String> iter = this.str.listIterator();
-//			while(iter.hasNext()) {
-//				s+= iter.next();
-//				s+= "\n";
-//			}
-//			return s;
-//	}
+
 }
