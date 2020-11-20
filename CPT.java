@@ -24,6 +24,12 @@ public class CPT {
 		this.varPar = new LinkedList<LinkedList<String>>();;			
 		this.varStrPar= new LinkedList<String>();			
 	}
+	public CPT() {
+		this.curr=null;
+		this.varCurr= new LinkedList<String>();
+		this.varPar = new LinkedList<LinkedList<String>>();;			
+		this.varStrPar= new LinkedList<String>();			
+	}
 	/**
 	 * create all the permutation of the parents and update them at the matrix
 	 */
@@ -140,7 +146,13 @@ public class CPT {
 		BigDecimal all =new BigDecimal("1.0").subtract(sum);
 		this.mat[line][index_empty] = all.doubleValue();
 	}
-	
+	public void init() {
+		for (int i = 0; i < this.varCurr.size()+1; i++) {
+			for (int j = 0; j < this.depth; j++) {
+				this.mat[i][j]=0.0;
+			}
+		}
+	}
 	public String toString() {
 		String s = " ";
 		for(int i =0 ; i< this.depth ; i++) {

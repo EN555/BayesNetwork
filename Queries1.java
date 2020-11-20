@@ -8,13 +8,13 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.StringTokenizer;
 
-public class Queries {
+public class Queries1 {
 	Network net;
 	private int numOfMul=0;
 	private int numOfAdd=0;
 	
 	
-	public Queries(Network net) {
+	public Queries1(Network net) {
 		this.net = net;
 	}
 	public LinkedList<String> generatePermutations(LinkedList<LinkedList<String>> lists, LinkedList<String> result, int depth, String current) {
@@ -104,14 +104,13 @@ public class Queries {
 		
 		
 	}
-	/**
-	 *
-	 * @param node - get the node
-	 * @return linkedlist with the name of the node and his variables
-	 * at every index of the linkedlist we get name + one variable
-	 */
+/**
+ * organise the cond (e.g ...| B go A stay) according to the parents 
+ * and return A stay B go 
+ * @return
+ */
 	public Double findNum(Node node ,String dep ,String cond) { //dep = C run | cond = A go B stay 
-		Double num = 0.0;
+		 Double num = 0.0;
 		 LinkedList<Node> parents = node.getParents();
 		 String str ="";
 		 ListIterator<Node> iter = parents.listIterator();
@@ -131,7 +130,7 @@ public class Queries {
 			 return -1.0;
 		 }
 		 else {
-		for(int i =1 ; i< node.getCpt().depth; i++) {
+		 for(int i =1 ; i< node.getCpt().depth; i++) {
 			if(((String)node.cpt.mat[i][0]).equals(spec)) {
 			for(int j =1; j <node.getCurrVar().size()+1 ; j++) {
 				if(((String)node.cpt.mat[0][j]).equals(state)) {
@@ -143,6 +142,9 @@ public class Queries {
 		 }
 		return -1.0;			//if not found
 	}
+	/**
+	 * you give all the lack node and it return list with all their permutation
+	 */
 	public LinkedList<String> generatePerNode(LinkedList<Node> list){			//return all the permutation of lack nodes
 		
 		LinkedList<LinkedList<String>> str  =new LinkedList<LinkedList<String>>();			//to restore all the permutation per node
@@ -164,8 +166,13 @@ public class Queries {
 	
 		return res;			//linked list with all the permutation of the lack nodes
 	}
-	
-	public Double findParent(String node, String state ,String [] cond) {			//??????????
+	/**
+	 *
+	 * @param node - get the node
+	 * @return linkedlist with the name of the node and his variables
+	 * at every index of the linkedlist we get name + one variable
+	 */
+	public Double findParent(String node, String state ,String [] cond) {		
 		Double prob = 1.0;
 		LinkedList<Node> parents = new LinkedList<Node>();
 		Node child =this.net.getNode(node);
@@ -236,6 +243,11 @@ public class Queries {
 		}
 		return prob;
 	}
+	/**
+	 * given list with all the exist node and return all the lack node
+	 * @param exist
+	 * @return
+	 */
 	public LinkedList<Node> lackNode(LinkedList<String> exist){			//look for all the nodes that didn't added them
 		LinkedList<Node> lack = new LinkedList<Node>(); 
 		LinkedList<Node> nodes = new LinkedList<Node>(this.net.getNodeCollection());
