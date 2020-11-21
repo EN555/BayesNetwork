@@ -18,6 +18,7 @@ public class CPT {
 	public Node curr;
 	Object [][] mat;
 	int depth = 0;			//the number of row of the matrix
+	int width=0;
 	public CPT(Node node) {
 		this.curr=node;
 		this.varCurr= new LinkedList<String>();
@@ -30,6 +31,7 @@ public class CPT {
 		this.varPar = new LinkedList<LinkedList<String>>();;			
 		this.varStrPar= new LinkedList<String>();			
 	}
+
 	/**
 	 * create all the permutation of the parents and update them at the matrix
 	 */
@@ -68,6 +70,7 @@ public class CPT {
 
 	public void setCurrVar(LinkedList<String> list)
 	{
+		this.width = list.size()+1;
 		this.varCurr = list;			//create pointer to the list of the variables
 	}
 	/**
@@ -156,7 +159,7 @@ public class CPT {
 	public String toString() {
 		String s = " ";
 		for(int i =0 ; i< this.depth ; i++) {
-			for(int j=0; j < this.varCurr.size() +1 ; j++) {
+			for(int j=0; j < this.width ; j++) {
 			s+= this.mat[i][j] + " ";
 			}
 			s+="\n";
