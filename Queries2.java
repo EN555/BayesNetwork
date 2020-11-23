@@ -1,5 +1,6 @@
 package ex0;
 
+import java.awt.List;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -19,7 +20,7 @@ public class Queries2 {
 	public Queries2(Network net) {
 		this.net = net;
 	}
-	public LinkedList<CPT> prob(String s) {
+	public String prob(String s) {
 		Double prob= 0.0;
 	//get all the hidden variables
 	LinkedList<Node> hidden = getHiddenVariables(s);	
@@ -41,7 +42,7 @@ public class Queries2 {
 				up = replaceUpdateCpt(ver,(String)node.getValue());	
 				cpt.put(ver, up);
 					}
-				else {		//if the cange in the inner column (e.g first column)
+				else {		//if the change in the inner column (e.g first column)
 				CPT up = UpdateCptVariables(ver ,(Node)node.getKey(),(String)node.getValue());	 
 				cpt.put(ver, up);
 				}
@@ -51,46 +52,179 @@ public class Queries2 {
 	LinkedList<CPT> organize = new LinkedList<CPT>(cpt.values());		// all the cpt organized ABC Ascii
 	LinkedList<Node> evidenceName = new LinkedList<Node>(evidence.keySet());	//all the evidence nodes
 	ListIterator<CPT> iterAll = organize.listIterator();
-	ListIterator<Node> iterEvidence = evidenceName.listIterator();
 	//////convert all the cpt/////
 	LinkedList<CPT> organizeConv = new LinkedList<CPT>();
 	while(iterAll.hasNext()) {
-		organizeConv.add(convertCpt(iterAll.next()));
+		organizeConv.add(convertCpt(iterAll.next()));	
 	}
-	//////// join ////////
-	ListIterator<CPT> iterConv =  organizeConv.listIterator();
-	if(organize.size() > 2) {
-		CPT margin = iterConv.next();	//keep all the previous
+	ListIterator<CPT> iterConv =  organizeConv.listIterator();		//check if have cpt with one by one size
+	LinkedList<CPT> up= new LinkedList<CPT>();
+	while(iterConv.hasNext()) {
+		CPT a= iterConv.next();
+		if(!(a.depth==2)) {
+			up.add(a);
+		}
+	}
+	up =organize(up,hidden);
+	//////// join && marginilization ////////
+	ListIterator<CPT> iterUp =  up.listIterator();
+	ListIterator<Node> iterEvidence = hidden.listIterator();		//every finish of each hidden value need to do margin
+	boolean con =true;
+
+		CPT join = iterUp.next();	//keep all the previous
 		while(iterEvidence.hasNext()) {
 			Node ev = iterEvidence.next();
-			while(iterConv.hasNext()) {	
-			CPT cp = iterConv.next();
-				if(ev.getName().equals(cp.curr.getName()) || cp.curr.getParents().contains(ev.getName()));
-				margin = joinCpt(margin , cp);
+			while(iterUp.hasNext() && con) {	
+				CPT cp = iterUp.next();
+				if(((String)(cp.mat[1][0])).contains(ev.getName())){
+				join = joinCpt(join , cp);
+				}
+				else {
+					con=false;
+				}
 			}
-			margin = MarginCpt(margin , ev);
-		}	
+			join = MarginCpt(join , ev);
+			iterUp.previous();		//need to come back
+			con=true;
 		}
-		else {
-			///marginilzation
+		
+		//need to multiple at the query and normalize
+		String str= s.replaceAll("[^A-Za-z]"," ").split(" ")[1];
+		CPT last=  joinCpt(join , convertCpt(this.net.getNode(str).cpt));
+		String state= s.replaceAll("[^A-Za-z]"," ").split(" ")[2];
+		Double  numerator = 0.0;
+		Double denominator = 0.0;
+		for(int i =1 ; i < last.depth ; i++) {
+			if(((String)last.mat[i][0]).contains(state)){
+				numerator = (Double)last.mat[i][1];
+			}
+			numOfAdd++;
+			denominator+= (Double)last.mat[i][1];
 		}
-	///need to multiple at the query and normalize
-		return organize;
+		return String.valueOf(numerator/denominator) + "," +numOfAdd +"," + numOfMul;
 	}
+	public LinkedList<CPT> organize(LinkedList<CPT> cpt ,LinkedList<Node> hidden){		//mistake
+		LinkedList<CPT> res= new LinkedList<CPT>();
+		LinkedList<CPT> hidd= 	cpt;
+		ListIterator<CPT> iterCPT = cpt.listIterator();
+		ListIterator<Node> iterNode = hidden.listIterator();
+		while(iterNode.hasNext()) {
+			Node l1= iterNode.next();
+			while(iterCPT.hasNext()) {
+				CPT curr= iterCPT.next();
+				if((((String)(curr.mat[1][0])).contains(l1.getName())) && !res.contains(curr)){
+					res.add(curr);
+				}
+			}
+			iterCPT = cpt.listIterator();
+		}
+		
+		return res;
+	}
+	public CPT MarginCpt(CPT one , Node marg) {		
+		CPT margin = new CPT();
+		LinkedList<String> var =marg.currVar;
+		ListIterator<String> iter = var.listIterator();
+		String s="";
+		
+		margin.mat = new Object[((one.depth-1)/marg.currVar.size())+1][2];
+		margin.depth=(one.depth-1)/var.size()+1;
+		margin.width=2;
+		//
+		int loc= 1;
+		LinkedList<String> variables= new LinkedList<String>();
+		Double sum= 0.0;
+		for(int i =1 ; loc < margin.depth ; i++) {
+			String [] spl = ((String)(one.mat[i][0])).split(" ");
+			String find="";
+			for(int index =0 ; index < spl.length ; index+=2) {	//create the position that we start with
+				if(!spl[index].equals(marg.getName())) {
+					variables.add(spl[index] +" "+ spl[index+1]);
+					find += spl[index] +" "+ spl[index+1]+ " ";
+				}
+			}
+			find =find.substring(0, find.length()-1);
+			ListIterator<String> it = variables.listIterator();
+
+			boolean correct= true;
+			boolean isit= isExist(margin, variables);
+			if(!isExist(margin, variables)) {		//check if calculate this position
+			for(int j =1 ; j < one.depth ; j++) {	//look for this position
+				while(it.hasNext()) {
+					String v= it.next();
+						if(!((String)(one.mat[j][0])).contains(v)) {		//the second check it for check if we once count this fount
+						correct=false;
+							}
+						}
+						if(correct) {
+							sum+= (Double)one.mat[j][1];
+							numOfAdd++;	
+									}	
+							correct= true;
+							it = variables.listIterator();
+			}
+					
+			margin.mat[loc][0] = find;
+			margin.mat[loc][1] = sum;
+			loc++;
+			sum=0.0;
+			}
+			variables.removeAll(variables);
+		}
+		
+		return margin;
+		
+	}
+	public boolean isExist(CPT cpt, LinkedList<String> prod) {
+		LinkedList<String> list = prod;
+		ListIterator<String> iter= list.listIterator();
+
+		boolean founded= false;	//true - he exist , false - not exist
+		int loc=1;
+		int size=0;
+		while(cpt.mat[loc][0] != null && !founded) {
+			while(iter.hasNext()) {
+				if(((String)(cpt.mat[loc][0])).contains(iter.next())) {
+					size++;
+				}
+			}
+			iter= list.listIterator();	
+			loc++;
+			if(size== list.size())
+				founded=true;
+			size=0;
+		}
+		return founded;
+	}
+	public LinkedList<String> generatePermutations(LinkedList<LinkedList<String>> lists, LinkedList<String> result, int depth, String current) {
+	    if (depth == lists.size()) {
+	        result.add(current);
+	        return result;
+	    }
+	    
+	    for (int i = 0; i < lists.get(depth).size(); i++) {
+	        generatePermutations(lists, result, depth + 1, current + lists.get(depth).get(i)+ " ");
+	    }
+	    return result;
+	}
+	
 	public CPT joinCpt(CPT one ,CPT two) {
 		CPT join = new CPT();
-		LinkedList<Node> intersection = intersection(one,two);
+		CPT first = one; //convertCpt(one);
+		CPT second = two; //convertCpt(two);
+		LinkedList<Node> intersection = intersection(first,second);
 		CPT big;
 		CPT small;
-		if(one.depth >two.depth) {
-			big = one;
-			small =two;
+		if(first.depth >second.depth) {
+			big = first;
+			small =second;
 		}
 		else{
-			big = two;
-			small =one;
+			big = second;
+			small =first;
 		}
-		LinkedList<Node> reminder = relativeReminder(big,small);
+		
+		LinkedList<Node> reminder = relativeReminder(small , intersection);
 		// the new join cpt
 		int sum=1;
 		Iterator<Node> iter =reminder.iterator();
@@ -98,52 +232,104 @@ public class Queries2 {
 		sum*=iter.next().currVar.size();	
 		}
 		join.mat = new Object[big.depth*sum][2];
+		join.depth = big.depth*sum;
+		join.width =2;
 		//find the intersection
 		int locJoin = 1;
-		for(int i =1 ; i <small.depth ; i++) {			//???
-			for (int j = 0; j < big.depth ; j++) {
-			//	String interCheck =
-			//	String adder =
+		for(int i =1 ; i <small.depth ; i++) {			//find the intersection in every row 
+			LinkedList<String> interCheck = intesectionString(intersection ,(String)small.mat[i][0]);
+			String remindString= reminderString(reminder , (String)small.mat[i][0]);
+			ListIterator<String> iterInterCheck = interCheck.listIterator();
+			for (int j =1; j < big.depth ; j++) {
+				boolean con = true;
+					while(iterInterCheck.hasNext()) {
+						if(!((String)big.mat[j][0]).contains(iterInterCheck.next())){
+							con=false;
+					}
+				}
+					if(con==true) {
+						join.mat[j][0] = (String)big.mat[j][0] + remindString;
+						join.mat[j][1] = (Double)big.mat[j][1]*(Double)small.mat[i][1];
+						numOfMul++;
+					}
+					iterInterCheck = interCheck.listIterator();
 			}
 		}
 		
+
 		
 		return join;
 		
 	}
-	public LinkedList<Node> intersection(CPT a , CPT b){
-		LinkedList<Node> intersection = new LinkedList<Node>();
-		LinkedList<Node> a_node = new LinkedList<Node>(a.curr.parents);
-		LinkedList<Node> b_node = new LinkedList<Node>(b.curr.parents);
-				a_node.add(a.curr);
-				b_node.add(b.curr);
-				//find the intersection
-		ListIterator<Node> iterA_node = a_node.listIterator();
-		while(iterA_node.hasNext()) {
-			Node inter =iterA_node.next();
-		if(b_node.contains(inter)) {
-			intersection.add(inter);
+	public LinkedList<String> intesectionString(LinkedList<Node> list ,String s) {
+		
+		LinkedList<String> res= new LinkedList<String>();	//keep them as tuple of node and state
+		ListIterator<Node> iterNode = list.listIterator();
+		String [] split =s.split(" ");
+	
+		while(iterNode.hasNext()) {
+		String check = iterNode.next().getName();
+			for(int  i=0 ; i< split.length ; i+=2) {
+				if(split[i].equals(check)) {
+					res.add(check +" "+ split[i+1]);
+				}
+			}
 		}
+		return res;
+	}
+	
+	public String reminderString(LinkedList<Node> list ,String s) {
+	
+		String res= "";
+		ListIterator<Node> iterNode = list.listIterator();
+		String [] split =s.split(" ");
+	
+		while(iterNode.hasNext()) {
+		String check = iterNode.next().getName();
+			for(int  i=0 ; i< split.length ; i+=2) {
+				if(split[i].equals(check)) {
+					res+= check +" "+ split[i+1];
+				}
+			}
+		}
+		
+		
+		return res;
+	}
+	
+	public LinkedList<Node> intersection(CPT a , CPT b){
+		
+		LinkedList<Node> intersection = new LinkedList<Node>();
+		String [] splitFirst= ((String)a.mat[1][0]).split(" ");
+		String [] splitSecond= ((String)b.mat[1][0]).split(" ");
+	
+		for(int i=0 ; i < splitFirst.length ; i+=2) {
+			for (int j = 0; j < splitSecond.length; j+=2) {
+				if(splitSecond[j].equals(splitFirst[i])) {
+					intersection.add(this.net.getNode(splitFirst[i]));
+				}
+			}
 		}
 		return intersection;
 	}
 	
-	public LinkedList<Node> relativeReminder(CPT big , CPT small){		///???
+	public LinkedList<Node> relativeReminder(CPT small , LinkedList<Node> intersection){		
+		
 		LinkedList<Node> reminder = new LinkedList<Node>();
-		LinkedList<Node> a_node = new LinkedList<Node>(small.curr.parents);
-		LinkedList<Node> b_node = new LinkedList<Node>(big.curr.parents);
-				a_node.add(small.curr);
-				b_node.add(big.curr);
-				//find the reminder
-		ListIterator<Node> iterA_node = a_node.listIterator();
-		while(iterA_node.hasNext()) {
-			Node inter =iterA_node.next();
-		if(!b_node.contains(inter)) {
-			reminder.add(inter);
-		}
+		ListIterator<Node> iterInter = intersection.listIterator();
+		String [] splitSmall= ((String)small.mat[1][0]).split(" ");
+		
+		while(iterInter.hasNext()) {
+			String name = iterInter.next().getName();
+			for(int i=0 ; i< splitSmall.length ; i+=2) {
+				if(!splitSmall[i].equals(name)) {
+					reminder.add(this.net.getNode(name));
+				}
+			}
 		}
 		return reminder;
 	}
+	
 	public CPT convertCpt(CPT cpt) {
 		CPT convCpt = new CPT();
 		int dep = (cpt.depth-1)*cpt.varCurr.size()+1;
@@ -172,8 +358,13 @@ public class Queries2 {
 			int counter=1;
 			while((1+num) >var) {
 			for(int i =1 ; i< cpt.depth ; i++) {
-				convCpt.mat[counter][0] =(String)cpt.mat[i][0] +  cpt.curr.getName() + " " + (String)cpt.mat[0][var] ;
-			counter++;
+				if((String)cpt.mat[0][var]==null) {
+					convCpt.mat[counter][0] =(String)cpt.mat[i][0];
+				}
+				else {
+				convCpt.mat[counter][0] =(String)cpt.mat[i][0]+  cpt.curr.getName() + " " + (String)cpt.mat[0][var] ;
+				}
+				counter++;
 			}
 			var++;
 			}
@@ -189,15 +380,6 @@ public class Queries2 {
 		return convCpt;
 	}
 	
-	public CPT MarginCpt(CPT one , Node marg) {
-		CPT margin = new CPT();
-		
-		
-		
-		
-		return margin;
-		
-	}
 	public CPT UpdateCptVariables(Node improve ,Node curr ,String state) {
 	CPT cpt = new CPT();
 	CPT needUp = this.net.getNode(improve.getName()).getCpt();
@@ -222,9 +404,18 @@ public class Queries2 {
 	}
 		int row=1;
 		while(!queue.isEmpty()) {
-		int need =queue.poll();
-			for (int i = 0; i < needUp.varCurr.size()+1; i++) {
-			 cpt.mat[row][i]= needUp.mat[need][i];	
+			int need =queue.poll();
+			String [] s = ((String)needUp.mat[need][0]).split(" ");
+			String res ="";
+				for(int j = 0; j< s.length ; j+=2) {		//insert strings at the first column
+					if(!(s[j] +" " + s[j+1]).equals(check)) {
+						res+= s[j]+  " " + s[j+1];
+			}
+		}
+				for (int i = 1; i < needUp.varCurr.size()+1; i++) {
+					cpt.mat[row][i] = (Double)needUp.mat[need][i];	
+					cpt.mat[row][0]= res;	
+				
 		}
 			row++;
 	}
@@ -266,7 +457,6 @@ public class Queries2 {
 		LinkedList<String> varUp= new LinkedList<String>();
 		varUp.add(state);
 		update.setCurrVar(varUp);
-		update.mat[0][1] =state;
 			
 		for (int i = 1; i < curr.depth; i++) {	//update Strings
 			update.mat[i][0]= curr.mat[i][0];
@@ -359,29 +549,7 @@ public class Queries2 {
 }		
 		return cpt;		//return organize cpt according to ABC 
 	}
-	
-//	/**
-//	 * delete all the known states of the factors that we don't need them
-//	 * @param cpt
-//	 * @return
-//	 */
-//	public LinkedList<CPT> deleteEvidence(LinkedList<CPT> cpt){
-//		LinkedList<CPT> list = new LinkedList<CPT>();
-//	
-//		
-//		
-//		
-//		return list;
-//	}
-//	
-	public CPT join(CPT a, CPT b) {
-		CPT res= new CPT();
-		
-		
-		
-		
-		return res;
-	}
+
 
 	
 }
