@@ -44,16 +44,29 @@ public class CPT {
     int loc= 1;
     while(it.hasNext()){		//enter the condition to the matrix
 		String s= it.next();
-//		Condition event= new Condition(s);
+		if(s.substring(s.length()-1,s.length()).equals(" ")) {
+			mat[loc][0]=s.substring(0,s.length()-1);
+			loc++;
+		}
+		else {
+			
 		mat[loc][0] = s;
 		loc++;
+		}
 	}
 	}
     ListIterator<String> iter = this.varCurr.listIterator();
     int col = 1;
     while(iter.hasNext()) {
-    	this.mat[0][col++] = iter.next();			//enter all the current variables
-    }
+    	String s= iter.next();
+    	String check = s.substring(s.length()-1,s.length());
+    	if(check.equals(" ")) {
+    	this.mat[0][col++] = s.substring(0, s.length()-1);			//enter all the current variables
+    	}
+    	else {
+    	this.mat[0][col++] = s;
+    	}
+    	}
     
 	}
 	
@@ -64,7 +77,7 @@ public class CPT {
 	    }
 	    
 	    for (int i = 0; i < lists.get(depth).size(); i++) {
-	        generatePermutations(lists, result, depth + 1, current + lists.get(depth).get(i)+ " ");
+	        generatePermutations(lists, result, depth + 1, current + lists.get(depth).get(i) +" ");
 	    }
 	}
 

@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Queue;
+import java.util.StringTokenizer;
 
 public class Queries2 {
 
@@ -89,11 +90,12 @@ public class Queries2 {
 		}
 		
 		//need to multiple at the query and normalize
-		String str= s.replaceAll("[^A-Za-z]"," ").split(" ")[1];
-		CPT last=  joinCpt(join , convertCpt(this.net.getNode(str).cpt));
-		String state= s.replaceAll("[^A-Za-z]"," ").split(" ")[2];
 		Double  numerator = 0.0;
 		Double denominator = 0.0;
+		String state= s.replaceAll("[^A-Za-z]"," ").split(" ")[2];
+		String str= s.replaceAll("[^A-Za-z]"," ").split(" ")[1];
+		if(!organize.contains(this.net.getNode(str))) {
+		CPT last=  joinCpt(join , convertCpt(this.net.getNode(str).cpt));	
 		for(int i =1 ; i < last.depth ; i++) {
 			if(((String)last.mat[i][0]).contains(state)){
 				numerator = (Double)last.mat[i][1];
@@ -101,7 +103,17 @@ public class Queries2 {
 			numOfAdd++;
 			denominator+= (Double)last.mat[i][1];
 		}
-		return String.valueOf(numerator/denominator) + "," +numOfAdd +"," + numOfMul;
+		}
+		else {
+			for(int i =1 ; i < join.depth ; i++) {
+				if(((String)join.mat[i][0]).contains(state)){
+					numerator = (Double)join.mat[i][1];
+				}
+				numOfAdd++;
+				denominator+= (Double)join.mat[i][1];
+			}
+		}
+		return 	String.valueOf(numerator/denominator) + "," +numOfAdd +"," + numOfMul;
 	}
 	public LinkedList<CPT> organize(LinkedList<CPT> cpt ,LinkedList<Node> hidden){		//mistake
 		LinkedList<CPT> res= new LinkedList<CPT>();
@@ -210,56 +222,86 @@ public class Queries2 {
 	
 	public CPT joinCpt(CPT one ,CPT two) {
 		CPT join = new CPT();
-		CPT first = one; //convertCpt(one);
-		CPT second = two; //convertCpt(two);
-		LinkedList<Node> intersection = intersection(first,second);
-		CPT big;
-		CPT small;
-		if(first.depth >second.depth) {
-			big = first;
-			small =second;
-		}
-		else{
-			big = second;
-			small =first;
-		}
-		
-		LinkedList<Node> reminder = relativeReminder(small , intersection);
+		LinkedList<Node> intersection = intersection(one,two);
+		LinkedList<Node> reminder = relativeReminder(one , intersection);
+	
 		// the new join cpt
-		int sum=1;
+	
+		int sum= 1;
 		Iterator<Node> iter =reminder.iterator();
-		while(iter.hasNext()) {
-		sum*=iter.next().currVar.size();	
-		}
-		join.mat = new Object[big.depth*sum][2];
-		join.depth = big.depth*sum;
-		join.width =2;
-		//find the intersection
-		int locJoin = 1;
-		for(int i =1 ; i <small.depth ; i++) {			//find the intersection in every row 
-			LinkedList<String> interCheck = intesectionString(intersection ,(String)small.mat[i][0]);
-			String remindString= reminderString(reminder , (String)small.mat[i][0]);
-			ListIterator<String> iterInterCheck = interCheck.listIterator();
-			for (int j =1; j < big.depth ; j++) {
-				boolean con = true;
-					while(iterInterCheck.hasNext()) {
-						if(!((String)big.mat[j][0]).contains(iterInterCheck.next())){
-							con=false;
-					}
-				}
-					if(con==true) {
-						join.mat[j][0] = (String)big.mat[j][0] + remindString;
-						join.mat[j][1] = (Double)big.mat[j][1]*(Double)small.mat[i][1];
-						numOfMul++;
-					}
-					iterInterCheck = interCheck.listIterator();
+		ListIterator<Node> iterator = reminder.listIterator();
+		while(iterator.hasNext()) {
+			Node node= iterator.next();
+			if(node != null && !node.getCurrVar().isEmpty()) {
+			sum *= node.getCurrVar().size();	
 			}
 		}
+		int dep =sum*(two.depth-1)+1;
+		join.mat = new Object[dep][2];
+		join.depth = dep ;
+		join.width =2;
 		
-
 		
+		if(!intersection.isEmpty()) {	//if one and two have intersection
+		int locJoin = 1;
+		for(int i =1 ; i <one.depth ; i++) {			//find the intersection in every row 
+			LinkedList<String> interCheck = intesectionString(intersection ,(String)one.mat[i][0]);
+			String remindString= reminderString(reminder , (String)one.mat[i][0]);
+			LinkedList<Integer> queue = indexContain(two, interCheck);
+			ListIterator<Integer> iterQueue = queue.listIterator();
+			
+			while(iterQueue.hasNext()) {
+				int place= iterQueue.next();
+				{
+			join.mat[locJoin][0] = (String)two.mat[place][0] + " " +remindString;
+			join.mat[locJoin][1] = (Double)two.mat[place][1]*(Double)one.mat[i][1];
+			numOfMul++;
+			locJoin++;
+					}
+				}	
+			}
+		}
+		else {		//if one and two havn't intersection
+			int loc=1;
+				for(int i =1 ; i <one.depth ; i++) {
+					for(int j = 1 ; j <two.depth ;j++) {
+					String remindString = reminderString(reminder , (String)one.mat[i][0]);
+					join.mat[loc][0] = (String)two.mat[j][0]+" "+ remindString;
+					join.mat[loc][1] = (Double)two.mat[j][1]*(Double)one.mat[i][1];
+					numOfMul++;
+					loc++;
+				}
+			}
+		}
 		return join;
 		
+	}
+	/**
+	 * method that check if the CPT contain the string
+	 * @param list
+	 * @param s
+	 * @return boolean
+	 * 
+	 */
+	public LinkedList<Integer> indexContain(CPT big , LinkedList<String> list) {
+		int loc=0;
+		int size=0;
+		LinkedList<Integer> queue =new LinkedList<Integer>();
+		ListIterator<String> iterCp =list.listIterator();
+		for(int i=1 ; i<big.depth ; i++) {
+			while(iterCp.hasNext()) {
+				if(((String)(big.mat[i][0])).contains(iterCp.next())) {
+					size++;
+					loc=i;
+				}
+			}
+			iterCp =list.listIterator();
+			if(size == list.size()) {
+				queue.add(loc);
+			}
+			size=0;
+		}
+		return queue;
 	}
 	public LinkedList<String> intesectionString(LinkedList<Node> list ,String s) {
 		
@@ -277,24 +319,36 @@ public class Queries2 {
 		}
 		return res;
 	}
-	
+	/**
+	 * get list of nodes that in the intersection and look for the rest
+	 * @param list
+	 * @param s
+	 * @return
+	 */
 	public String reminderString(LinkedList<Node> list ,String s) {
-	
 		String res= "";
-		ListIterator<Node> iterNode = list.listIterator();
-		String [] split =s.split(" ");
-	
-		while(iterNode.hasNext()) {
-		String check = iterNode.next().getName();
-			for(int  i=0 ; i< split.length ; i+=2) {
-				if(split[i].equals(check)) {
-					res+= check +" "+ split[i+1];
-				}
+		LinkedList<String> ls= new LinkedList<String>();
+		String  [] pl= s.split(" ");
+		for(int i=0 ;i < pl.length ; i++) {
+			if(!pl[i].equals("")) {
+				ls.add(pl[i]);
 			}
 		}
-		
-		
+		ListIterator<String> iter= ls.listIterator();
+		while(iter.hasNext()) {
+			String l1= iter.next();
+			if(this.net.getNode(l1)!= null) {
+			if(list.contains(this.net.getNode(l1))) {
+				String v= iter.next();
+				res += l1+" "+v+ " ";
+			}
+		}
+		}
+		if(res.length()>0) {
+		res= res.substring(0, res.length()-1);
+		}
 		return res;
+		
 	}
 	
 	public LinkedList<Node> intersection(CPT a , CPT b){
@@ -319,14 +373,13 @@ public class Queries2 {
 		ListIterator<Node> iterInter = intersection.listIterator();
 		String [] splitSmall= ((String)small.mat[1][0]).split(" ");
 		
-		while(iterInter.hasNext()) {
-			String name = iterInter.next().getName();
-			for(int i=0 ; i< splitSmall.length ; i+=2) {
-				if(!splitSmall[i].equals(name)) {
-					reminder.add(this.net.getNode(name));
-				}
+		for(int i=0 ; i<splitSmall.length ; i+=2) {
+			boolean con = intersection.contains(this.net.getNode(splitSmall[i]));
+			if(!intersection.contains(this.net.getNode(splitSmall[i]))) {
+			reminder.add(this.net.getNode(splitSmall[i]));
 			}
 		}
+		
 		return reminder;
 	}
 	
@@ -362,8 +415,14 @@ public class Queries2 {
 					convCpt.mat[counter][0] =(String)cpt.mat[i][0];
 				}
 				else {
-				convCpt.mat[counter][0] =(String)cpt.mat[i][0]+  cpt.curr.getName() + " " + (String)cpt.mat[0][var] ;
-				}
+					String s= (String)cpt.mat[i][0];
+					if(s.substring(s.length()-1 ,s.length()).equals(" ")) {
+						convCpt.mat[counter][0] =(String)cpt.mat[i][0]+  cpt.curr.getName() +" "+ (String)cpt.mat[0][var] ;
+					}
+					else {
+						convCpt.mat[counter][0] =(String)cpt.mat[i][0]+ " "+ cpt.curr.getName() +" "+ (String)cpt.mat[0][var] ;
+					}
+					}
 				counter++;
 			}
 			var++;
