@@ -24,12 +24,12 @@ public class Queries2 {
 		this.net = net;
 	}
 	public String prob(String s) {
-		Double prob= 0.0; 
+	Double prob= 0.0; 
 	String state= s.replaceAll("[^A-Za-z]"," ").split(" ")[2];	//the state of the query
 	String str= s.replaceAll("[^A-Za-z]"," ").split(" ")[1];	//the node of the query
 	
-	if(getExistProbability(this.net.getNode(str).getCpt(), s) != -1)
-			return getExistProbability(this.net.getNode(str).getCpt(), s) +","+ numOfAdd+ "," + numOfMul;
+	if(getExistProbability(this.net.getNode(str).getCpt(), s) != -1)		//check if this condition exist
+			return getExistProbability(this.net.getNode(str).getCpt(), s) +","+ numOfAdd+ "," + numOfMul; 	//if exist simply return her from the cpt
 	
 	String []	QueryEvidence =  s.replaceAll("[^A-Za-z]"," ").split(" ");
 	LinkedList<Node> QuerEv = new LinkedList<Node>();
@@ -37,13 +37,14 @@ public class Queries2 {
 		QuerEv.add(this.net.getNode(QueryEvidence[i]));
 	}
 	
-	//get all the hidden variables
+	// get all the hidden variables
+	
 	LinkedList<Node> hidden = getHiddenVariables(s);	
 	HashMap<Node,CPT> cpt = getCptHidden(hidden);
 	HashMap<Node, String> evidence = new HashMap<Node, String>();
 	evidence= extractEvidence(s);
 	
-	//check if one of the nodes isn't ancsetor of the query or not contain at the evidence
+	// check if one of the nodes isn't ancsetor of the query or not contain at the evidence
 	
 	
 	LinkedList<Node> QueryAncestors = evidenceAndQueryAncestors(QuerEv);
@@ -53,20 +54,26 @@ public class Queries2 {
 			if(!QueryAncestors.contains(it))
 						removeNode.add(it);
 		}
+		
 	ListIterator<Node> iterDel = removeNode.listIterator();
 	while(iterDel.hasNext()) {
 		Node l1 = iterDel.next();
 		cpt.remove(l1);
 		hidden.remove(l1);
 	}
-		
+	
+	// remove all the evidence state
+	
+	
 	LinkedList<CPT> organize= new LinkedList<CPT>(removeEvidence(cpt ,evidence));		// all the cpt organized ABC Ascii
 	
 	LinkedList<Node> evidenceName = new LinkedList<Node>(evidence.keySet());	//all the evidence nodes
 	
 	ListIterator<CPT> iterAll = organize.listIterator();
 	
-	//////convert all the cpt/////
+	// convert all the cpt
+	
+	
 	LinkedList<CPT> organizeConv = new LinkedList<CPT>();
 	while(iterAll.hasNext()) {
 		organizeConv.add(convertCpt(iterAll.next()));	
@@ -75,7 +82,8 @@ public class Queries2 {
 	ListIterator<CPT> iterConv =  organizeConv.listIterator();		//check if have cpt with one by one size
 	LinkedList<LinkedList<CPT>> listOflistCpt =	CreateListOFlistsCpt(hidden, organizeConv);
 
-	//////// join && marginilization ////////
+	// join and margin 
+
 	
 	ListIterator<LinkedList<CPT>> iterlistOFlist = listOflistCpt.listIterator();
 	ListIterator<Node> iterHidden = hidden.listIterator();
@@ -93,36 +101,30 @@ public class Queries2 {
 			helper = res;
 		}
 		
-	}	
-		//need to multiple at the query and normalize
+	}
+		
+	//check if the query variable depend on one of the hidden variable 
+		
+		if(!organize.contains(this.net.getNode(str).cpt)) {
+			helper =  joinCpt(helper , convertCpt(this.net.getNode(str).cpt));	
+		}
+		
+	// take the probability of the state and normalize her
+		
 		Double  numerator = 0.0;
 		Double denominator = 0.0;
 		int counter= 0;
-		if(!organize.contains(this.net.getNode(str).cpt)) {
-		CPT last=  joinCpt(helper , convertCpt(this.net.getNode(str).cpt));			
-		for(int i =1 ; i < last.depth ; i++) {
-				if(((String)last.mat[i][0]).contains(state)){
-					numerator = (Double)last.mat[i][1];
+		
+		for(int i =1 ; i < helper.depth ; i++) {
+				if(((String)helper.mat[i][0]).contains(state)){
+					numerator = (Double)helper.mat[i][1];
 				}
 				if(counter != 0) {
 				numOfAdd++;
 				}
-				denominator+= (Double)last.mat[i][1];
+				denominator+= (Double)helper.mat[i][1];
 				counter++;
 			}
-		}
-			else {
-				for(int i =1 ; i < helper.depth ; i++) {
-					if(((String)helper.mat[i][0]).contains(state)){
-						numerator = (Double)helper.mat[i][1];
-						}
-					if(counter != 0) {
-						numOfAdd++;
-					}
-						denominator+= (Double)helper.mat[i][1];
-						counter++;
-			}
-		}
 	
 		String res = String.valueOf(numerator/denominator); 
 		String rem ="," +numOfAdd +"," + numOfMul; 
@@ -298,8 +300,8 @@ public class Queries2 {
 		
 		CPT join = new CPT();
 		
-		if(list.isEmpty())
-			return null;
+		if(list.isEmpty())	
+			return margin;
 		
 		if(margin != null) {
 		list.add(margin);
@@ -430,7 +432,7 @@ public class Queries2 {
 			return null;
 		
 		if(!((String)(one.mat[1][0])).contains(marg.getName()))	//check if have what to margin 
-			return null;
+			return one;
 		
 		CPT margin = new CPT();
 		LinkedList<String> var =marg.currVar;
@@ -853,6 +855,7 @@ public class Queries2 {
 			hidden.add(l1);
 		}
 	}
+	
 	//now organise them according to the ABC
 	Comparator<Node> compare= new Comparator<Node>() {
 		@Override
