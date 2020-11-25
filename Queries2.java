@@ -31,11 +31,11 @@ public class Queries2 {
 	if(getExistProbability(this.net.getNode(str).getCpt(), s) != -1)		//check if this condition exist
 			return getExistProbability(this.net.getNode(str).getCpt(), s) +","+ numOfAdd+ "," + numOfMul; 	//if exist simply return her from the cpt
 	
-	String []	QueryEvidence =  s.replaceAll("[^A-Za-z]"," ").split(" ");
-	LinkedList<Node> QuerEv = new LinkedList<Node>();
+	String []	QueryEvidence =  s.replaceAll("[^A-Za-z]"," ").split(" ");	//and "p" at the first index
+	HashSet<Node> QuerAndEv = new HashSet<Node>();
 	for(int i=1 ; i < QueryEvidence.length ; i+=2) {
-		QuerEv.add(this.net.getNode(QueryEvidence[i]));
-	}
+		QuerAndEv.add(this.net.getNode(QueryEvidence[i]));
+	}	
 	
 	// get all the hidden variables
 	
@@ -47,7 +47,7 @@ public class Queries2 {
 	// check if one of the nodes isn't ancsetor of the query or not contain at the evidence
 	
 	
-	LinkedList<Node> QueryAncestors = evidenceAndQueryAncestors(QuerEv);
+	LinkedList<Node> QueryAncestors = evidenceAndQueryAncestors(QuerAndEv);		//use at hashset
 	
 	LinkedList<Node> removeNode = new LinkedList<Node>();
 		for(Node it : cpt.keySet()) {
@@ -88,33 +88,60 @@ public class Queries2 {
 	ListIterator<LinkedList<CPT>> iterlistOFlist = listOflistCpt.listIterator();
 	ListIterator<Node> iterHidden = hidden.listIterator();
 	CPT helper = null;
-	
+//	CPT res = new CPT();
 	while(iterlistOFlist.hasNext()) {
 		
 		LinkedList<CPT> innerList = iterlistOFlist.next();
-		CPT res = MinMultiplicaionMediatorMain(innerList , helper);
+//		if(helper != null) {
+			helper = MinMultiplicaionMediatorMain(innerList , helper);
+//		}
 		Node node = iterHidden.next();
+	
+		helper = MarginCpt(helper, node);
 		
-		res = MarginCpt(res, node);
-		
-		if(res != null && res.depth > 2) {
-			helper = res;
-		}
+//		if(res != null && res.depth > 2) {
+//			helper = res;
+//		}
 		
 	}
 		
-	//check if the query variable depend on one of the hidden variable 
+	//check if the query variable depend on one of the evidence variable like that p(A=true | A=true ...) and check if this query depend only on evidence nodes
 		
-		if(!organize.contains(this.net.getNode(str).cpt)) {
-			helper =  joinCpt(helper , convertCpt(this.net.getNode(str).cpt));	
-		}
-		
+		if(!cpt.keySet().contains(this.net.getNode(str))) {
+			
+			if(helper == null) {		//if the result is null of all the previous calculation
+				
+				HashMap<Node ,CPT> QuerCpt = new HashMap<Node ,CPT>();
+				QuerCpt.put(this.net.getNode(str),this.net.getNode(str).cpt);
+				LinkedList<CPT> querCp= new LinkedList<CPT>(removeEvidence(QuerCpt ,evidence));
+					helper = convertCpt(querCp.getFirst());
+					if(helper.depth == 2)
+						return 1+ "," +numOfAdd +"," + numOfMul; 
+			}
+			
+			else {
+				
+				HashMap<Node ,CPT> QuerCpt = new HashMap<Node ,CPT>();
+				QuerCpt.put(this.net.getNode(str),this.net.getNode(str).cpt);
+				LinkedList<CPT> querCp= new LinkedList<CPT>(removeEvidence(QuerCpt ,evidence));
+				CPT CleanCpt = querCp.getFirst();
+				helper =  joinCpt(helper , convertCpt(CleanCpt));
+					if(helper.depth == 2)
+						return 1+ "," +numOfAdd +"," + numOfMul; 
+			}
+			}
+			
+			if(cpt.keySet().contains(this.net.getNode(str)) && helper == null) {
+					return 1+ "," +numOfAdd +"," + numOfMul; 
+			}
+			
+			
 	// take the probability of the state and normalize her
 		
 		Double  numerator = 0.0;
 		Double denominator = 0.0;
 		int counter= 0;
-		
+	
 		for(int i =1 ; i < helper.depth ; i++) {
 				if(((String)helper.mat[i][0]).contains(state)){
 					numerator = (Double)helper.mat[i][1];
@@ -126,12 +153,12 @@ public class Queries2 {
 				counter++;
 			}
 	
-		String res = String.valueOf(numerator/denominator); 
+		String cons = String.valueOf(numerator/denominator); 
 		String rem ="," +numOfAdd +"," + numOfMul; 
 		
-		if(res.length() > 7) 	//return only five digits after decimal point
-			return res.substring(0 , 7) + rem;
-		return 	res +rem;
+		if(cons.length() > 7) 	//return only five digits after decimal point
+			return cons.substring(0 , 7) + rem;
+		return 	cons +rem;
 	}
 	
 	/**
@@ -141,30 +168,31 @@ public class Queries2 {
 	 * @return - if the probability exist return the probability else return -1
 	 */
 	public Double getExistProbability(CPT cpt , String str) {
+	
 		Double probability= -1.0;
 		int size = 0;
 		CPT cp = convertCpt(cpt);
 		String []	allVar =  str.replaceAll("[^A-Za-z]"," ").split(" ");
-		LinkedList<String> allVarList = new LinkedList<String>();
+		
+		HashSet<String> allVarList = new HashSet<String>();	
+		Iterator<String> iterAll = allVarList.iterator();	
+		
 		
 		for(int i=1 ; i < allVar.length ; i+=2) {
 			allVarList.add(allVar[i]+ " " + allVar[i+1]);
 		}
-		
-		ListIterator<String> iterAllVarList = allVarList.listIterator();
-		
+		iterAll = allVarList.iterator();
 		for(int j=1; j < cp.depth && probability == -1 ; j++) {	
 		
-			while(iterAllVarList.hasNext()) {
-				String temp= iterAllVarList.next();
+			while(iterAll.hasNext()) {
+				String temp= iterAll.next();
 				if(((String)cp.mat[j][0]).contains(temp)) {
 					 size++;
 				 }
 			}
 			
-			iterAllVarList = allVarList.listIterator();	
 			
-			if(size ==  allVarList.size())
+			if(size ==  (allVar.length-1)/2)
 				probability = (Double)cp.mat[j][1];
 			
 			size=0;
@@ -176,8 +204,8 @@ public class Queries2 {
 	 * the function get all the evidence of function and the query of the function
 	 * @return linkedlist of all the ancestors
 	 */
-	public LinkedList<Node> evidenceAndQueryAncestors(LinkedList<Node> nodes){
-		ListIterator<Node> iterNodes = nodes.listIterator();
+	public LinkedList<Node> evidenceAndQueryAncestors(HashSet<Node> nodes){
+		Iterator<Node> iterNodes = nodes.iterator();
 		LinkedList<Node> allAnces = new LinkedList<Node>();
 		
 		while(iterNodes.hasNext()) {
@@ -434,6 +462,11 @@ public class Queries2 {
 		if(!((String)(one.mat[1][0])).contains(marg.getName()))	//check if have what to margin 
 			return one;
 		
+		//if the cpt is 2*2 and want to margin him without any nodes else return the cpt as is		
+		
+		if(one.depth ==3 && (((String)(one.mat[1][0])).split(" ")).length == 2) 
+					return null;
+			
 		CPT margin = new CPT();
 		LinkedList<String> var =marg.currVar;
 		ListIterator<String> iter = var.listIterator();
@@ -514,6 +547,13 @@ public class Queries2 {
 	}
 	
 	public CPT joinCpt(CPT one ,CPT two) {
+		
+		if(one == null || two == null) {
+			if(one == null)
+				return two;
+			return one;
+		}
+		
 		CPT join = new CPT();
 		LinkedList<Node> intersection = intersection(one,two);
 		LinkedList<Node> reminder = relativeReminder(one , intersection);
@@ -748,6 +788,7 @@ public class Queries2 {
 	CPT cpt = new CPT();
 	CPT needUp = this.net.getNode(improve.getName()).getCpt();
 	String check = curr.getName() + " " + state;
+	
 	//keep all the rows that not contain the evidence state
 	Queue<Integer> queue = new LinkedList<Integer>();
 	

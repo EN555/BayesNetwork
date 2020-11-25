@@ -108,7 +108,8 @@ public class Test {
 //		}
 		
 ////////////////////////////////////////////////////////////////////////////////		
-//		Queries1 quer = new Queries1(net);
+		Queries1 quer = new Queries1(net2);
+//		System.out.println(quer.parseProb("P(B=true|B=true),1"));
 //		LinkedList<Node> lis = new LinkedList<Node>();
 //		lis.add(node2);
 //		lis.add(node3);
@@ -211,16 +212,18 @@ System.out.println("///join///");
 //CPT a6 = quer2.MarginCpt(a5, node33);
 //System.out.println(a6);
 //System.out.println(quer2.MarginCpt(a2, node33));
-String s = quer2.prob("P(J=true|B=true),1");
-
+System.out.println(quer2.convertCpt(node44.cpt));
 //CPT a8 = quer2.joinCpt(a7, quer2.convertCpt(node11.cpt));
-System.out.println(s);
+//System.out.println(s);
 //LinkedList<CPT> list =new LinkedList<CPT>();
 //list.add(quer2.convertCpt(node55.cpt));
 //list.add(quer2.convertCpt(node44.cpt));
 //list.add(quer2.convertCpt(node33.cpt));
 //System.out.println(quer2.MinMultiplicaionMediatorMain(list));
-
+//System.out.println(quer2.convertCpt(node44.cpt));
+String s = quer2.prob("P(J=true|J=true),1");
+System.out.println(s);
+	
 	}
 
                        
