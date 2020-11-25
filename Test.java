@@ -43,11 +43,11 @@ public class Test {
 		node3.addProb("false,set,=go,0.55,=stay,0.15");
 		node3.addProb("false,noset,=go,0.28,=stay,0.3");
 		node3.addProb("false,maybe,=go,0.45,=stay,0.25");
-		System.out.println(node1.getCpt().toString());
-		System.out.println("/////");
-		System.out.println(node2.getCpt().toString());
-		System.out.println("/////");
-		System.out.println(node3.getCpt().toString());
+//		System.out.println(node1.getCpt().toString());
+//		System.out.println("/////");
+//		System.out.println(node2.getCpt().toString());
+//		System.out.println("/////");
+//		System.out.println(node3.getCpt().toString());
 //System.out.println("////////////////////////////////////////////////////////////////////////////////////////////////////////////");
 //second network
 //		Network net2 = new Network();
@@ -138,7 +138,7 @@ public class Test {
 //	
 //}
 //System.out.println("////");
-String var = "P(J=true|B=true),2";	
+String var = "P(C=run|B=set,A=true),1";	
 //String var2 = "P(B=true|J=true,M=true),1";
 //LinkedList<String> per =quer.parseProb(var);
 //ListIterator<String> itera = per.listIterator();
@@ -196,7 +196,7 @@ System.out.println("///join///");
 //System.out.println(a1);
 //System.out.println(a2);
 //CPT a3 =quer2.joinCpt(a1, a2);
-System.out.println("blaaaaaaaaaaaaaaaaaaaaaaa");
+//System.out.println("blaaaaaaaaaaaaaaaaaaaaaaa");
 //System.out.println(quer2.convertCpt(node11.cpt));
 //System.out.println(quer2.convertCpt(node22.cpt));
 //System.out.println(quer2.convertCpt(node33.cpt));
@@ -211,11 +211,17 @@ System.out.println("blaaaaaaaaaaaaaaaaaaaaaaa");
 //CPT a6 = quer2.MarginCpt(a5, node33);
 //System.out.println(a6);
 //System.out.println(quer2.MarginCpt(a2, node33));
-//CPT a7= quer2.prob("P(B=true|J=true,M=true),1");
+String s = quer2.prob("P(C=run|B=set,A=true),1");
+
 //CPT a8 = quer2.joinCpt(a7, quer2.convertCpt(node11.cpt));
-System.out.println(quer2.prob("P(C=run|B=set,A=true),3"));
-	
+System.out.println(quer2.prob("P(A=true|C=run),1"));
+//LinkedList<CPT> list =new LinkedList<CPT>();
+//list.add(quer2.convertCpt(node55.cpt));
+//list.add(quer2.convertCpt(node44.cpt));
+//list.add(quer2.convertCpt(node33.cpt));
+//System.out.println(quer2.MinMultiplicaionMediatorMain(list));
+
 	}
-	
+
                        
 }

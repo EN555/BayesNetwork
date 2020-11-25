@@ -4,11 +4,13 @@ import java.awt.List;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 public class Queries2 {
@@ -22,99 +24,388 @@ public class Queries2 {
 		this.net = net;
 	}
 	public String prob(String s) {
-		Double prob= 0.0;
+		Double prob= 0.0; 
+	String state= s.replaceAll("[^A-Za-z]"," ").split(" ")[2];	//the state of the query
+	String str= s.replaceAll("[^A-Za-z]"," ").split(" ")[1];	//the node of the query
+	
+	if(getExistProbability(this.net.getNode(str).getCpt(), s) != -1)
+			return getExistProbability(this.net.getNode(str).getCpt(), s) +","+ numOfAdd+ "," + numOfMul;
+	
+	String []	QueryEvidence =  s.replaceAll("[^A-Za-z]"," ").split(" ");
+	LinkedList<Node> QuerEv = new LinkedList<Node>();
+	for(int i=1 ; i < QueryEvidence.length ; i+=2) {
+		QuerEv.add(this.net.getNode(QueryEvidence[i]));
+	}
+	
 	//get all the hidden variables
 	LinkedList<Node> hidden = getHiddenVariables(s);	
-	//enter all the cpt that connect to contain the hidden variables organized ABC (e.g Ascii)	
 	HashMap<Node,CPT> cpt = getCptHidden(hidden);
-	//delete all the evidence cpt that unusable and their state as values
 	HashMap<Node, String> evidence = new HashMap<Node, String>();
 	evidence= extractEvidence(s);
-	//move on all the cpt  and remove evidence
-	for(Map.Entry node : evidence.entrySet()) 
-	{	
-		for(Node ver : cpt.keySet()) {	//move on all the vertex
-			LinkedList<Node> par=  ver.getParents();
-			Node check = (Node)ver;
-			if(((Node)node.getKey()).getName().equals(ver.getName()) || ver.getParents().contains((Node)node.getKey())) {		///need to remove all the columns without one
-			
-				if(((Node)node.getKey()).getName().equals(ver.getName())) {
-				CPT up=	new CPT();
-				up = replaceUpdateCpt(ver,(String)node.getValue());	
-				cpt.put(ver, up);
-					}
-				else {		//if the change in the inner column (e.g first column)
-				CPT up = UpdateCptVariables(ver ,(Node)node.getKey(),(String)node.getValue());	 
-				cpt.put(ver, up);
-				}
-			}
+	
+	//check if one of the nodes isn't ancsetor of the query or not contain at the evidence
+	
+	
+	LinkedList<Node> QueryAncestors = evidenceAndQueryAncestors(QuerEv);
+	
+	LinkedList<Node> removeNode = new LinkedList<Node>();
+		for(Node it : cpt.keySet()) {
+			if(!QueryAncestors.contains(it))
+						removeNode.add(it);
 		}
+	ListIterator<Node> iterDel = removeNode.listIterator();
+	while(iterDel.hasNext()) {
+		Node l1 = iterDel.next();
+		cpt.remove(l1);
+		hidden.remove(l1);
 	}
-	LinkedList<CPT> organize = new LinkedList<CPT>(cpt.values());		// all the cpt organized ABC Ascii
+		
+	LinkedList<CPT> organize= new LinkedList<CPT>(removeEvidence(cpt ,evidence));		// all the cpt organized ABC Ascii
+	
 	LinkedList<Node> evidenceName = new LinkedList<Node>(evidence.keySet());	//all the evidence nodes
+	
 	ListIterator<CPT> iterAll = organize.listIterator();
+	
 	//////convert all the cpt/////
 	LinkedList<CPT> organizeConv = new LinkedList<CPT>();
 	while(iterAll.hasNext()) {
 		organizeConv.add(convertCpt(iterAll.next()));	
 	}
+	
 	ListIterator<CPT> iterConv =  organizeConv.listIterator();		//check if have cpt with one by one size
-	LinkedList<CPT> up= new LinkedList<CPT>();
-	while(iterConv.hasNext()) {
-		CPT a= iterConv.next();
-		if(!(a.depth==2)) {
-			up.add(a);
-		}
-	}
-	up =organize(up,hidden);
-	//////// join && marginilization ////////
-	ListIterator<CPT> iterUp =  up.listIterator();
-	ListIterator<Node> iterEvidence = hidden.listIterator();		//every finish of each hidden value need to do margin
-	boolean con =true;
+	LinkedList<LinkedList<CPT>> listOflistCpt =	CreateListOFlistsCpt(hidden, organizeConv);
 
-		CPT join = iterUp.next();	//keep all the previous
-		while(iterEvidence.hasNext()) {
-			Node ev = iterEvidence.next();
-			while(iterUp.hasNext() && con) {	
-				CPT cp = iterUp.next();
-				if(((String)(cp.mat[1][0])).contains(ev.getName())){
-				join = joinCpt(join , cp);
-				}
-				else {
-					con=false;
-				}
-			}
-			join = MarginCpt(join , ev);
-			iterUp.previous();		//need to come back
-			con=true;
+	//////// join && marginilization ////////
+	
+	ListIterator<LinkedList<CPT>> iterlistOFlist = listOflistCpt.listIterator();
+	ListIterator<Node> iterHidden = hidden.listIterator();
+	CPT helper = null;
+	
+	while(iterlistOFlist.hasNext()) {
+		
+		LinkedList<CPT> innerList = iterlistOFlist.next();
+		CPT res = MinMultiplicaionMediatorMain(innerList , helper);
+		Node node = iterHidden.next();
+		
+		res = MarginCpt(res, node);
+		
+		if(res != null && res.depth > 2) {
+			helper = res;
 		}
 		
+	}	
 		//need to multiple at the query and normalize
 		Double  numerator = 0.0;
 		Double denominator = 0.0;
-		String state= s.replaceAll("[^A-Za-z]"," ").split(" ")[2];
-		String str= s.replaceAll("[^A-Za-z]"," ").split(" ")[1];
-		if(!organize.contains(this.net.getNode(str))) {
-		CPT last=  joinCpt(join , convertCpt(this.net.getNode(str).cpt));	
+		int counter= 0;
+		if(!organize.contains(this.net.getNode(str).cpt)) {
+		CPT last=  joinCpt(helper , convertCpt(this.net.getNode(str).cpt));			
 		for(int i =1 ; i < last.depth ; i++) {
-			if(((String)last.mat[i][0]).contains(state)){
-				numerator = (Double)last.mat[i][1];
-			}
-			numOfAdd++;
-			denominator+= (Double)last.mat[i][1];
-		}
-		}
-		else {
-			for(int i =1 ; i < join.depth ; i++) {
-				if(((String)join.mat[i][0]).contains(state)){
-					numerator = (Double)join.mat[i][1];
+				if(((String)last.mat[i][0]).contains(state)){
+					numerator = (Double)last.mat[i][1];
 				}
+				if(counter != 0) {
 				numOfAdd++;
-				denominator+= (Double)join.mat[i][1];
+				}
+				denominator+= (Double)last.mat[i][1];
+				counter++;
 			}
 		}
-		return 	String.valueOf(numerator/denominator) + "," +numOfAdd +"," + numOfMul;
+			else {
+				for(int i =1 ; i < helper.depth ; i++) {
+					if(((String)helper.mat[i][0]).contains(state)){
+						numerator = (Double)helper.mat[i][1];
+						}
+					if(counter != 0) {
+						numOfAdd++;
+					}
+						denominator+= (Double)helper.mat[i][1];
+						counter++;
+			}
+		}
+	
+		String res = String.valueOf(numerator/denominator); 
+		String rem ="," +numOfAdd +"," + numOfMul; 
+		
+		if(res.length() > 7) 	//return only five digits after decimal point
+			return res.substring(0 , 7) + rem;
+		return 	res +rem;
 	}
+	
+	/**
+	 * 
+	 * @param cpt - get cpt 
+	 * @param str - get the query as is
+	 * @return - if the probability exist return the probability else return -1
+	 */
+	public Double getExistProbability(CPT cpt , String str) {
+		Double probability= -1.0;
+		int size = 0;
+		CPT cp = convertCpt(cpt);
+		String []	allVar =  str.replaceAll("[^A-Za-z]"," ").split(" ");
+		LinkedList<String> allVarList = new LinkedList<String>();
+		
+		for(int i=1 ; i < allVar.length ; i+=2) {
+			allVarList.add(allVar[i]+ " " + allVar[i+1]);
+		}
+		
+		ListIterator<String> iterAllVarList = allVarList.listIterator();
+		
+		for(int j=1; j < cp.depth && probability == -1 ; j++) {	
+		
+			while(iterAllVarList.hasNext()) {
+				String temp= iterAllVarList.next();
+				if(((String)cp.mat[j][0]).contains(temp)) {
+					 size++;
+				 }
+			}
+			
+			iterAllVarList = allVarList.listIterator();	
+			
+			if(size ==  allVarList.size())
+				probability = (Double)cp.mat[j][1];
+			
+			size=0;
+		}
+		
+		return probability;
+	}
+	/**
+	 * the function get all the evidence of function and the query of the function
+	 * @return linkedlist of all the ancestors
+	 */
+	public LinkedList<Node> evidenceAndQueryAncestors(LinkedList<Node> nodes){
+		ListIterator<Node> iterNodes = nodes.listIterator();
+		LinkedList<Node> allAnces = new LinkedList<Node>();
+		
+		while(iterNodes.hasNext()) {
+			Node node = iterNodes.next();
+			LinkedList<Node> temp =	isAnsecstor(node, new LinkedList<Node>());
+			if(!allAnces.contains(node)) {
+			allAnces.add(node);
+			}
+			ListIterator<Node> iterable = temp.listIterator();
+			while(iterable.hasNext()) {
+				Node tp = iterable.next();
+				if(!allAnces.contains(tp)) {
+				allAnces.add(tp);
+				}
+			}
+			iterable = temp.listIterator();
+		}
+		return  allAnces;
+	}
+	/**
+	 * recursive function to find all the ancestors of node
+	 * @param node
+	 * @param list
+	 * @return
+	 */
+	public  LinkedList<Node> isAnsecstor(Node node, LinkedList<Node> list) {
+		if(node.parents.isEmpty()) { 
+			return list;
+		}
+		ListIterator<Node> iter = node.parents.listIterator();
+		while(iter.hasNext()) {
+			Node temp = iter.next();
+			list.add(temp);
+			isAnsecstor(temp, list);
+		}	
+		return list;
+	}
+	
+	/**
+	 * method that get all the hidden nodes and all the convertion of the cpt 
+	 * @param hidden - all the hidden nodes
+	 * @param convCpt - all the convert cpt
+	 * @return linkedlist of linkeslist organize according to the Ascii 
+	 */
+	public LinkedList<LinkedList<CPT>> CreateListOFlistsCpt(LinkedList<Node> hidden , LinkedList<CPT> convCpt){
+	
+		LinkedList<CPT> Conv = convCpt;
+		ListIterator<CPT> iterConv = Conv.listIterator();		//create iterators for the input
+		ListIterator<Node> iterHidden = hidden.listIterator();
+	
+		LinkedList<LinkedList<CPT>> listOflistCpt =new LinkedList<LinkedList<CPT>>();
+		ListIterator<LinkedList<CPT>> iterListOfList = listOflistCpt.listIterator(); 
+		
+		LinkedList<CPT> allKeep  = new LinkedList<CPT>();
+		
+		while(iterHidden.hasNext()) {
+			Node node = iterHidden.next();	//get hidden node
+			
+			LinkedList<CPT> temporary = new LinkedList<CPT>();
+			
+			while(iterConv.hasNext()) {		//move on all the cpt 
+				CPT temp = iterConv.next();
+					
+					if(((String)temp.mat[1][0]).contains(node.getName()) && temp.depth > 2 && !allKeep.contains(temp)) {
+						temporary.add(temp);
+						allKeep.add(temp);
+				}
+			}
+					listOflistCpt.add(temporary);
+					iterConv = convCpt.listIterator();		//reset to convertion iter
+			}
+		return listOflistCpt;
+}
+	/**
+	 * get string and extract all the evidence and put them in 
+	 * hashmap that contain key- Node and value - status
+	 * @param s
+	 * @return
+	 */
+	public HashMap<Node, String> extractEvidence(String s){
+		
+		String ex= s.replaceAll("[^A-Za-z]"," ");
+		String  [] extr =ex.split(" ");
+		HashMap<Node, String> list = new HashMap<Node, String>();
+
+		for(int i= 3 ; i< extr.length ; i+=2) {
+			list.put(this.net.getNode(extr[i]), extr[i+1]);
+		}
+
+		return list;		//return key-node and value- state of the node
+	}
+	
+	public Collection<CPT> removeEvidence(HashMap<Node,CPT> allHiddenCpt , HashMap<Node, String> evidence){
+		
+		HashMap<Node,CPT> cpt = allHiddenCpt;
+		
+		for(Map.Entry node : evidence.entrySet()) 
+		{	
+			for(Node ver : cpt.keySet()) {	//move on all the vertex
+				LinkedList<Node> par=  ver.getParents();
+				Node check = (Node)ver;
+				if(((Node)node.getKey()).getName().equals(ver.getName()) || ver.getParents().contains((Node)node.getKey())) {		///need to remove all the columns without one
+				
+					if(((Node)node.getKey()).getName().equals(ver.getName())) {
+					CPT up=	new CPT();
+					up = replaceUpdateCpt(ver,(String)node.getValue());	
+					cpt.put(ver, up);
+						}
+					else {		//if the change in the inner column (e.g first column)
+					CPT up = UpdateCptVariables(ver ,(Node)node.getKey(),(String)node.getValue());	 
+					cpt.put(ver, up);
+					}
+				}
+			}
+		}
+		
+		return cpt.values();
+	}
+	public CPT MinMultiplicaionMediatorMain(LinkedList<CPT> list , CPT margin) {	
+		
+		CPT join = new CPT();
+		
+		if(list.isEmpty())
+			return null;
+		
+		if(margin != null) {
+		list.add(margin);
+		}
+		
+		if(list.size() != 1) {
+		int counter = 0;
+		LinkedList<CPT> curr= list;
+			while(counter < list.size()) {
+				LinkedList<CPT> get = joinCoupleMinMultiplicaion(curr);
+				curr.removeAll(get);
+				ListIterator<CPT> iter= get.listIterator();
+				join = joinCpt(iter.next(), iter.next());
+				curr.add(join);
+				counter++;
+			}
+		}
+		
+	else {
+		ListIterator<CPT> iterable = list.listIterator();
+		join = iterable.next();
+	}
+		return join;
+	}
+	public LinkedList<CPT> joinCoupleMinMultiplicaion(LinkedList<CPT> list) {
+		
+		CPT arrA1 [] = new CPT[list.size()]; 
+		ListIterator<CPT> iterCpt = list.listIterator();
+		
+		for(int i = 0; i < list.size() ; i++) {
+			CPT curr= iterCpt.next();
+			arrA1[i] =  curr;
+		}
+		
+		int min= Integer.MAX_VALUE;
+		int A1 = 0 ;
+		int A2 = 0;
+		for (int i = 0; i < arrA1.length; i++) {
+			for (int j = 0; j < arrA1.length; j++) {
+				if(getNumOfMultiplications(arrA1[i] , arrA1[j]) < min && i != j) {		//first case the new couple lower than previous
+					min = getNumOfMultiplications(arrA1[i] , arrA1[j]);
+					A1 = i;
+					A2 = j;
+				}
+				if((i != A1 || j != A2 ) && getNumOfMultiplications(arrA1[i] , arrA1[j]) == min && i != j) {				//second case the new couple worth to the previous
+					
+					if((calaculateAsciiOfCptVar(arrA1[i]) + calaculateAsciiOfCptVar(arrA1[j])) < (calaculateAsciiOfCptVar(arrA1[A1])+calaculateAsciiOfCptVar(arrA1[A2]))){
+						A1 = i;
+						A2 = j;
+					}
+			
+				}
+			}
+		}
+		
+		LinkedList<CPT> opt = new LinkedList<CPT>();
+		opt.add(arrA1[A1]);
+		opt.add(arrA1[A2]);
+		return opt;
+	}
+	
+	public int calaculateAsciiOfCptVar(CPT a) {
+		int Ascii= 0;
+		String [] row= ((String)a.mat[1][0]).split(" ");
+		for(int i=0 ; i < row.length ; i+=2) {
+			Ascii += (int)row[i].charAt(0);		
+		}
+		return Ascii;
+	}
+
+	/**
+	 * i assume that the function get factors without evidence
+	 * function that calculate the number of multiplication
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	public int getNumOfMultiplications(CPT a,CPT b) {
+		int mul=1;
+		//only calculate the new matrix
+		String strA1 = (String)a.mat[1][0];
+		String strB1 = (String)b.mat[1][0];
+		
+		String splitA1 [] = strA1.split(" ");
+		String splitB1 [] = strB1.split(" ");
+		
+		LinkedList<Node> nodes = new LinkedList<Node>();
+		
+		for(int i=0 ; i < splitA1.length ; i+=2) {
+			nodes.add(this.net.getNode(splitA1[i]));
+		}
+		
+		for(int j=0 ; j < splitB1.length ; j+=2) {
+			if(!nodes.contains(this.net.getNode(splitB1[j]))) {
+				nodes.add(this.net.getNode(splitB1[j]));
+			}	
+		}
+		ListIterator<Node> iter =nodes.listIterator();
+		
+		while(iter.hasNext()) {
+			mul *= iter.next().getCurrVar().size();
+		}
+	
+		return mul;
+	}
+	
 	public LinkedList<CPT> organize(LinkedList<CPT> cpt ,LinkedList<Node> hidden){		//mistake
 		LinkedList<CPT> res= new LinkedList<CPT>();
 		LinkedList<CPT> hidd= 	cpt;
@@ -133,7 +424,14 @@ public class Queries2 {
 		
 		return res;
 	}
-	public CPT MarginCpt(CPT one , Node marg) {		
+	public CPT MarginCpt(CPT one , Node marg) {
+		
+		if(one == null)
+			return null;
+		
+		if(!((String)(one.mat[1][0])).contains(marg.getName()))	//check if have what to margin 
+			return null;
+		
 		CPT margin = new CPT();
 		LinkedList<String> var =marg.currVar;
 		ListIterator<String> iter = var.listIterator();
@@ -157,7 +455,7 @@ public class Queries2 {
 			}
 			find =find.substring(0, find.length()-1);
 			ListIterator<String> it = variables.listIterator();
-
+			int counter=0;
 			boolean correct= true;
 			boolean isit= isExist(margin, variables);
 			if(!isExist(margin, variables)) {		//check if calculate this position
@@ -170,7 +468,10 @@ public class Queries2 {
 						}
 						if(correct) {
 							sum+= (Double)one.mat[j][1];
-							numOfAdd++;	
+							if(counter != 0) {
+								numOfAdd++;		
+							}
+							counter++;
 									}	
 							correct= true;
 							it = variables.listIterator();
@@ -187,6 +488,7 @@ public class Queries2 {
 		return margin;
 		
 	}
+	
 	public boolean isExist(CPT cpt, LinkedList<String> prod) {
 		LinkedList<String> list = prod;
 		ListIterator<String> iter= list.listIterator();
@@ -207,17 +509,6 @@ public class Queries2 {
 			size=0;
 		}
 		return founded;
-	}
-	public LinkedList<String> generatePermutations(LinkedList<LinkedList<String>> lists, LinkedList<String> result, int depth, String current) {
-	    if (depth == lists.size()) {
-	        result.add(current);
-	        return result;
-	    }
-	    
-	    for (int i = 0; i < lists.get(depth).size(); i++) {
-	        generatePermutations(lists, result, depth + 1, current + lists.get(depth).get(i)+ " ");
-	    }
-	    return result;
 	}
 	
 	public CPT joinCpt(CPT one ,CPT two) {
@@ -253,10 +544,22 @@ public class Queries2 {
 			while(iterQueue.hasNext()) {
 				int place= iterQueue.next();
 				{
+					if(!reminder.isEmpty()) {
 			join.mat[locJoin][0] = (String)two.mat[place][0] + " " +remindString;
+			if((Double)one.mat[i][1] != 0) {
 			join.mat[locJoin][1] = (Double)two.mat[place][1]*(Double)one.mat[i][1];
 			numOfMul++;
 			locJoin++;
+			}
+						}
+					else {
+						if((Double)one.mat[i][1] != 0) {
+						join.mat[locJoin][0] = (String)two.mat[place][0];
+						join.mat[locJoin][1] = (Double)two.mat[place][1]*(Double)one.mat[i][1];
+						numOfMul++;
+						locJoin++;
+							}
+						}
 					}
 				}	
 			}
@@ -527,24 +830,7 @@ public class Queries2 {
 		
 		return update;
 	}
-	/**
-	 * get string and extract all the evidence and put them in 
-	 * hashmap that contain key- Node and value - status
-	 * @param s
-	 * @return
-	 */
-	public HashMap<Node, String> extractEvidence(String s){
-		
-		String ex= s.replaceAll("[^A-Za-z]"," ");
-		String  [] extr =ex.split(" ");
-		HashMap<Node, String> list = new HashMap<Node, String>();
-
-		for(int i= 3 ; i< extr.length ; i+=2) {
-			list.put(this.net.getNode(extr[i]), extr[i+1]);
-		}
-
-		return list;		//return key-node and value- state of the node
-	}
+	
 	/**
 	 * find all the hidden variables and organise them according to the ABC
 	 */
