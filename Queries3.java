@@ -23,8 +23,11 @@ public class Queries3 extends Queries2{
 		
 		//check if this condition exist - I assume that have valid input
 		
-		if(getExistProbability(this.net.getNode(node).getCpt(), s) != -1)		
-				return getExistProbability(this.net.getNode(node).getCpt(), s) +","+ numOfAdd+ "," + numOfMul; 	//if exist simply return her from the cpt
+		if(getExistProbability(this.net.getNode(node).getCpt(), s) != -1) {		
+			String res = String.valueOf(getExistProbability(this.net.getNode(node).getCpt(), s));
+			while(res.length() < 7) res += "0";
+			return res +","+ numOfAdd+ "," + numOfMul; 	//if exist simply return her from the cpt
+		}
 		
 		
 		// get all the hidden variables organize according to ABC ascii and all their CPT

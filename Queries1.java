@@ -1,7 +1,5 @@
 package ex0;
 
-import java.awt.List;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -55,9 +53,11 @@ public class Queries1 {
 		
 		allQuery = allQuery.substring(0, allQuery.length()-1);	//return -1 if he didn't find else return the probability	
 		Double check = isExist(convertCpt(node.cpt), allQuery);
-		if(check != -1) 
-			return String.valueOf(check)+"," + numOfAdd + "," + numOfMul;
-		
+		if(check != -1) { 
+			String res = String.valueOf(check);
+			while(res.length() < 7) res += "0";
+			return res+"," + numOfAdd + "," + numOfMul;
+		}
 		//collect all the hidden nodes to list
 		
 		LinkedList<String> dependNodeList = new LinkedList<String>();		//all the depended node

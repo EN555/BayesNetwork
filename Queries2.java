@@ -1,7 +1,6 @@
 package ex0;
 
 
-	import java.awt.List;
 	import java.util.Collection;
 	import java.util.Comparator;
 	import java.util.HashMap;
@@ -36,9 +35,11 @@ import org.w3c.dom.ls.LSInput;
 			
 			//check if this condition exist - I assume that have valid input
 			
-			if(getExistProbability(this.net.getNode(node).getCpt(), s) != -1)		
-					return getExistProbability(this.net.getNode(node).getCpt(), s) +","+ numOfAdd+ "," + numOfMul; 	//if exist simply return her from the cpt
-			
+			if(getExistProbability(this.net.getNode(node).getCpt(), s) != -1) {		
+				String res = String.valueOf(getExistProbability(this.net.getNode(node).getCpt(), s));
+				while(res.length() < 7) res += "0";
+				return res +","+ numOfAdd+ "," + numOfMul; 	//if exist simply return her from the cpt
+			}
 			
 			// get all the hidden variables organize according to ABC ascii and all their CPT
 			

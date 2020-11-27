@@ -1,6 +1,5 @@
 package ex0;
 
-import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,7 +8,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.StringTokenizer;
 
-import javax.swing.text.html.HTMLDocument.Iterator;
 
 public class CPT {
 	public LinkedList<String> varCurr;		//list of all current variables

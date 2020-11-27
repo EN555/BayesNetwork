@@ -14,15 +14,15 @@ public class Test {
 	public static void main(String[] args) {
 //first network
 		Network net = new Network();
-		Node node1 = net.addNode("Var A");
+		Node node1 = net.addNode("A");
 		node1.addCurr("Values: true,false");
 		node1.addPar("Parents: none");
 		node1.addProb("=true,0.1");
-		Node node2 = net.addNode("Var B");
+		Node node2 = net.addNode("B");
 		node2.addCurr("Values: set,noset,maybe");
 		node2.addPar("Parents: none");
 		node2.addProb("=set,0.2,=noset,0.5");
-		Node node3 = net.addNode("Var C");
+		Node node3 = net.addNode("C");
 		node3.addCurr("Values: go,stay,run");
 		node3.addPar("Parents: A,B");
 		node3.addProb("true,set,=go,0.25,=stay,0.7");
@@ -39,27 +39,27 @@ public class Test {
 //System.out.println("////////////////////////////////////////////////////////////////////////////////////////////////////////////");
 //second network
 		Network net2 = new Network();
-		Node node11 = net2.addNode("Var B");
+		Node node11 = net2.addNode("B");
 		node11.addCurr("Values: true,false");
 		node11.addPar("Parents: none");
 		node11.addProb("=true,0.001");
-		Node node22 = net2.addNode("Var E");
+		Node node22 = net2.addNode("E");
 		node22.addCurr("Values: true,false");
 		node22.addPar("Parents: none");
 		node22.addProb("=true,0.002");
-		Node node33 = net2.addNode("Var A");
+		Node node33 = net2.addNode("A");
 		node33.addCurr("Values: true,false");
 		node33.addPar("Parents: B,E");
 		node33.addProb("true,true,=true,0.95");
 		node33.addProb("true,false,=true,0.94");
 		node33.addProb("false,true,=true,0.29");
 		node33.addProb("false,false,=true,0.001");
-		Node node44 = net2.addNode("Var J");
+		Node node44 = net2.addNode("J");
 		node44.addCurr("Values: true,false");
 		node44.addPar("Parents: A");
 		node44.addProb("true,=true,0.9");
 		node44.addProb("false,=true,0.05");
-		Node node55 = net2.addNode("Var M");
+		Node node55 = net2.addNode("M");
 		node55.addCurr("Values: true,false");
 		node55.addPar("Parents: A");
 		node55.addProb("true,=true,0.7");
@@ -80,25 +80,22 @@ public class Test {
 		
 System.out.println("query1");
 Queries1 quer = new Queries1(net);
-System.out.println(quer.parseProb("P(A=true|C=run),1"));
+System.out.println(quer.parseProb("P(C=run|B=set,A=true),1"));
 		
 		
 		//query2
 System.out.println("query2");			
 Queries2 quer2 = new Queries2(net);
-String s = quer2.prob("P(A=true|C=run),1");
+String s = quer2.prob("P(C=run|B=set,A=true),2");
 System.out.println(s);
 
 //query3
 System.out.println("query3");
 Queries3 quer3 = new Queries3(net);
-String prob = quer3.prob("P(A=true|C=run),1");
+String prob = quer3.prob("P(C=run|B=set,A=true),3");
 	System.out.println(prob);
 	
-//string tests
 	
-int algo = Integer.parseInt("P(C=run|B=set,A=true),1".replaceAll("[^0-9.]+", ""));
-System.out.println(algo);	
 
 	}               
 }
