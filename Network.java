@@ -21,11 +21,11 @@ public class Network {
 	 */
 	public Node addNode(String node)
 	{
-		StringTokenizer str = new StringTokenizer(node, " ");	
-		str.nextToken();	//skip on "parents" word
-		String name = str.nextToken();
-		Node vertex = new Node(name, this);
-		this.map.put(name, vertex);			//search in the map will execute according to the name of the node
+	//	StringTokenizer str = new StringTokenizer(node, " ");	
+	//	str.nextToken();	//skip on "parents" word
+	//	String name = str.nextToken();
+		Node vertex = new Node(node, this);
+		this.map.put(node, vertex);			//search in the map will execute according to the name of the node
 		return vertex;
 	}
 	

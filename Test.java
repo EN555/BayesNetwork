@@ -94,7 +94,11 @@ System.out.println("query3");
 Queries3 quer3 = new Queries3(net);
 String prob = quer3.prob("P(A=true|C=run),1");
 	System.out.println(prob);
-	}
+	
+//string tests
+	
+int algo = Integer.parseInt("P(C=run|B=set,A=true),1".replaceAll("[^0-9.]+", ""));
+System.out.println(algo);	
 
-                  
+	}               
 }
