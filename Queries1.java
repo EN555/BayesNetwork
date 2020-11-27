@@ -29,58 +29,70 @@ public class Queries1 {
 	    return result;
 	}
 	
-	// P(B=true|J=true,M=true),1
+	/**
+	 * function get String like that P(B=true|J=true,M=true),1
+	 * @param var
+	 * @return their probability using bayes rules
+	 */
 	public String parseProb(String var) {
-		this.numOfAdd=0;			//initial the number of operation
-		this.numOfMul=0;
-		Double prob= 0.0;
-		int algoNum = Integer.parseInt(var.replaceAll("[^0-9]", ""));		//the number of the algo to execute
-		//extract the name of the node
+		
+		Double prob= 0.0;	
 		String strVar = var.replaceAll("[^A-Za-z]"," ");
-		String name = strVar.split(" ")[1];  //return only the name
-		String depend = strVar.split(" ")[1] +" " +strVar.split(" ")[2];
-		Node node = this.net.getNode(name);		//the main node
+		String name = strVar.split(" ")[1];  		//return only the name
+		String query = strVar.split(" ")[1] +" " +strVar.split(" ")[2];
+		Node node = this.net.getNode(name);			//the main node
 		String [] spl = strVar.split(" ");
-	////check if the dep exist  		///////////////////////
-		String t ="";
-		for(int i= 3 ; i< spl.length; i++) {
-			if(i<spl.length-1) {
-				t+= spl[i]+ " ";
-			}
-			else {
-				t+=spl[i];
+		
+		
+	//check if the query already exist
+			
+		String allQuery ="";			//mean P(A= ..  | B= ^ ^..) the condition it's from the (|)
+		for(int i= 1 ; i< spl.length; i++) {
+			if(i < spl.length) {
+				allQuery+= spl[i]+ " ";
 			}
 		}
-		Double check = findNum(node , depend , t);
-		if(check != -1) {
+		
+		allQuery = allQuery.substring(0, allQuery.length()-1);	//return -1 if he didn't find else return the probability	
+		Double check = isExist(convertCpt(node.cpt), allQuery);
+		if(check != -1) 
 			return String.valueOf(check)+"," + numOfAdd + "," + numOfMul;
-		}
-		//////////
-		LinkedList<String> ll = new LinkedList<String>();
+		
+		//collect all the hidden nodes to list
+		
+		LinkedList<String> dependNodeList = new LinkedList<String>();		//all the depended node
 		for(int i= 3 ; i< spl.length ; i+=2) {
-			ll.add(spl[i]);
+			dependNodeList.add(spl[i]);
 		}
-		LinkedList<Node> lackNode= new LinkedList<Node>();
-		lackNode = lackNode(ll);
-		LinkedList<String> resLack = new LinkedList<String>();
-		resLack = generatePerNode(lackNode);
-		String s= "";
+		
+		LinkedList<Node> hiddenNode= new LinkedList<Node>();
+		hiddenNode = lackNode(dependNodeList);						//return all the hidden nodes
+		
+		// create the permutation of all the hidden nodes
+		
+		LinkedList<String> resLack = new LinkedList<String>();		//enter too the query
+		resLack = generatePerNode(hiddenNode);
+		String evidence= "";				//create string that hold all the evidence variable
 		for(int j =3 ; j<spl.length ; j++) {
-			s+= spl[j]+" ";
-		}
+			evidence+= spl[j]+" ";
+		}				
+		evidence = evidence.substring(0 , evidence.length()-1);
 		ListIterator<String> iterable= resLack.listIterator();
-		LinkedList<String> permutation = new LinkedList<String>();		////the res of all the permutation that need to calculate
+		LinkedList<String> permutation = new LinkedList<String>();		//the res of all the permutation that need to calculate
 		ListIterator<String> list = permutation.listIterator();
 		while(iterable.hasNext()) {
-			list.add(iterable.next()+ s);
+			list.add(iterable.next()+ evidence);
 		}
+		
+		//divide the permutation to two lists all that contains to the numerator and all the rest
+		
 		LinkedList<String> numerator = new LinkedList<String>();
 		ListIterator<String> iteration = permutation.listIterator();
 		ListIterator<String> insert = numerator.listIterator();
 
 		while(iteration.hasNext()) {
 			String str= iteration.next();
-			if(str.contains(depend)) {
+			if(str.contains(query)) {
 				insert.add(str);
 			}
 		}
@@ -88,7 +100,7 @@ public class Queries1 {
 		iteration = permutation.listIterator();
 		while(iteration.hasNext()) {
 			String dep= iteration.next();
-			if(!dep.contains(depend)) {
+			if(!dep.contains(query)) {
 				denominator.add(dep);
 			}
 		}																//we got the denominator and numerator of the equation
@@ -98,11 +110,43 @@ public class Queries1 {
 		String cal= String.valueOf(result);
 		numOfAdd++;
 		if(cal.length() >=7) {			//check the size of the return
-			cal.substring(0,7);
+			cal = cal.substring(0,7);
 		}
 		return cal +"," + numOfAdd + ","+ numOfMul;		//????
 		
 		
+	}
+	/**
+	 * check if this query already exist in the cpt
+	 * @param cpt convert cpt
+	 * @param query
+	 * @return if it's exist it's return the probability else return -1
+	 */
+	public Double isExist(CPT cpt, String query) {		
+		Double ex = -1.0;
+		int size= 0;
+		
+		String splitQuery [] = query.split(" ");
+		LinkedList<String> list = new LinkedList<String>();
+		for(int i=0 ; i< splitQuery.length ; i+=2) {
+			list.add(splitQuery[i] + " " + splitQuery[i+1]);
+		}
+		
+		ListIterator<String> iterList = list.listIterator();
+	
+		for(int i =1 ; i < cpt.depth && ex == -1.0 ;i++) {
+			while(iterList.hasNext()) {
+				if(((String)cpt.mat[i][0]).contains(iterList.next())){
+					size++;
+				}
+			}
+			if(size == list.size()) {
+				ex = (Double)cpt.mat[i][1];
+			}
+			size= 0;
+			iterList = list.listIterator();
+		}
+		return ex;
 	}
 /**
  * organise the cond (e.g ...| B go A stay) according to the parents 
@@ -131,7 +175,7 @@ public class Queries1 {
 		 }
 		 else {
 		 for(int i =1 ; i< node.getCpt().depth; i++) {
-			if(((String)node.cpt.mat[i][0]).equals(spec)) {
+			if(contain((String)node.cpt.mat[i][0], spec)) {
 			for(int j =1; j <node.getCurrVar().size()+1 ; j++) {
 				if(((String)node.cpt.mat[0][j]).equals(state)) {
 					return (Double)node.cpt.mat[i][j];
@@ -190,8 +234,11 @@ public class Queries1 {
 		ListIterator<String> it =proba.listIterator();
 		String worth ="";
 		while(it.hasNext()) {
-		worth+= it.next()+ " ";			
-		}		
+		worth+= it.next()+ " ";				//worth mean at who he depended		
+		}
+		if(!worth.equals("")) {
+		worth = worth.substring(0 , worth.length()-1);
+		}
 			int dep = child.cpt.depth;
 			if(worth.equals("")) {
 				for(int j=1 ; j < child.cpt.varCurr.size()+1 ; j++) {
@@ -200,19 +247,32 @@ public class Queries1 {
 					}
 			}
 			}
+			else {
 			for(int i=1 ; i < dep ; i++) {
-				if(child.cpt.mat[i][0].equals(worth)) {
+					if(contain((String)child.cpt.mat[i][0] ,worth )) {
 				for(int j=1 ; j < child.cpt.varCurr.size()+1 ; j++) {
 					if(child.cpt.mat[0][j].equals(state)) {
 						prob =(Double)(child.cpt.mat[i][j]);			//double
 					}
-
 		}
 				}
+					}
 		}
 			if(prob== 0.0)			//check if we got the probability of 0
 				return 1.0;
 		return prob;
+	}
+	
+	public boolean contain(String par , String check) {
+		boolean in=true;
+		if(check.equals(""))
+			return false;
+		String sp [] = check.split(" ");
+		for(int i=0; i < sp.length ; i+=2) {
+		if(!par.contains(sp[i] +" " + sp[i+1])) 
+				in=false;
+		}
+		return in;
 	}
 	public Double calCond(LinkedList<String> str) {
 		Double prob= 0.0;
@@ -259,6 +319,61 @@ public class Queries1 {
 			}
 		}
 		return lack;
+	}
+	public CPT convertCpt(CPT cpt) {
+		CPT convCpt = new CPT();
+		int dep = (cpt.depth-1)*cpt.varCurr.size()+1;
+		convCpt.mat = new Object[dep][2];
+		if(cpt.depth==2) {
+			convCpt.curr = cpt.curr;
+			convCpt.depth = dep;
+			convCpt.varPar = cpt.varPar;
+			convCpt.varCurr = cpt.varCurr;
+			convCpt.width=2;
+			for(int i =1 ; i< dep ; i++) {
+				convCpt.mat[i][0] = cpt.curr.getName() + " " + (String)cpt.mat[0][i];
+			}
+			for(int i =1 ; i< dep ; i++) {
+				convCpt.mat[i][1] = cpt.mat[1][i];
+			}
+		}
+		else {
+			convCpt.curr = cpt.curr;
+			convCpt.depth = dep;
+			convCpt.varPar = cpt.varPar;
+			convCpt.varCurr = cpt.varCurr;
+			convCpt.width=2;
+			int num= cpt.varCurr.size();
+			int var = 1; 
+			int counter=1;
+			while((1+num) >var) {
+			for(int i =1 ; i< cpt.depth ; i++) {
+				if((String)cpt.mat[0][var]==null) {
+					convCpt.mat[counter][0] =(String)cpt.mat[i][0];
+				}
+				else {
+					String s= (String)cpt.mat[i][0];
+					if(s.substring(s.length()-1 ,s.length()).equals(" ")) {
+						convCpt.mat[counter][0] =(String)cpt.mat[i][0]+  cpt.curr.getName() +" "+ (String)cpt.mat[0][var] ;
+					}
+					else {
+						convCpt.mat[counter][0] =(String)cpt.mat[i][0]+ " "+ cpt.curr.getName() +" "+ (String)cpt.mat[0][var] ;
+					}
+					}
+				counter++;
+			}
+			var++;
+			}
+			//copy all the columns
+			int row=1;
+			for(int i =1 ; i < cpt.varCurr.size()+1 ; i++) {
+				for(int j = 1 ; j < cpt.depth ; j++) {
+					convCpt.mat[row][1] = cpt.mat[j][i];
+					row++;
+				}
+			}				
+		}
+		return convCpt;
 	}
 
 }

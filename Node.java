@@ -30,6 +30,7 @@ public class Node {
 	 */
 		
 	public void addCurr(String currVar) {
+		
 		this.currVar = new LinkedList<String>();		//initial currVar
 		StringTokenizer str = new StringTokenizer(currVar, ",// //:");
 		str.nextElement(); 			//to delete "value"
@@ -46,6 +47,7 @@ public class Node {
  * @param parVar
  */
 	public void addPar(String parVar) {		///create the variables at lists
+		
 		if(parVar.contains("none")) {		//if this node havn't parent
 		this.cpt.setVarPar(new LinkedList<LinkedList<String>>());
 		return ;
