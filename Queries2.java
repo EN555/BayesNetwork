@@ -167,11 +167,12 @@ import org.w3c.dom.ls.LSInput;
 			
 			for(CPT cp : cpt) {	
 				CPT temp = removeEvidenceMediator(cp , evidence);
-				if (temp != null)
-				unEvidence.add(temp);
+					if (temp != null)
+						unEvidence.add(temp);
 			}	
 			return unEvidence;
 		}
+		
 		/**
 		 * get only one cpt and all the evidence in the query
 		 * and return margin cpt
@@ -185,6 +186,7 @@ import org.w3c.dom.ls.LSInput;
 			
 			return up;
 		}
+		
 		/**
 		 *  get only one cpt and one evidence
 		 * @param improve

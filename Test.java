@@ -94,8 +94,6 @@ System.out.println("query3");
 Queries3 quer3 = new Queries3(net2);
 String prob = quer3.prob("P(B=true|J=true,M=true),1");
 	System.out.println(prob);
-	
-	
 
 	}               
 }
