@@ -1,5 +1,6 @@
 package ex0;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -15,6 +16,7 @@ public class Queries1 {
 	public Queries1(Network net) {
 		this.net = net;
 	}
+	
 	public LinkedList<String> generatePermutations(LinkedList<LinkedList<String>> lists, LinkedList<String> result, int depth, String current) {
 	    if (depth == lists.size()) {
 	        result.add(current);
@@ -58,6 +60,7 @@ public class Queries1 {
 			while(res.length() < 7) res += "0";
 			return res+"," + numOfAdd + "," + numOfMul;
 		}
+		
 		//collect all the hidden nodes to list
 		
 		LinkedList<String> dependNodeList = new LinkedList<String>();		//all the depended node
@@ -109,10 +112,8 @@ public class Queries1 {
 		Double result = nemo/(nemo+deno);
 		String cal= String.valueOf(result);
 		numOfAdd++;
-		if(cal.length() >=7) {			//check the size of the return
-			cal = cal.substring(0,7);
-		}
-		return cal +"," + numOfAdd + ","+ numOfMul;		//????
+		
+		return String.format("%.5f", result) +"," + numOfAdd + ","+ numOfMul;		
 		
 		
 	}
@@ -284,10 +285,10 @@ public class Queries1 {
 		String [] split= s.split(" ");
 		for(int i= 0 ; i< split.length ; i+=2) {
 		if(i==0) {
-			mul = findParent(split[i],split[i+1] , split);			//at the first time it's only put it in without multiplication
+		mul = findParent(split[i],split[i+1] , split);			//at the first time it's only put it in without multiplication
 		}
 		else {
-			mul *= findParent(split[i],split[i+1] , split);
+		mul *= findParent(split[i],split[i+1] , split);
 			numOfMul++;
 		}
 		}
@@ -295,13 +296,13 @@ public class Queries1 {
 			prob = mul;
 		}
 		else {
-			prob +=mul;
+			 prob +=mul;
 			numOfAdd++;
 		}
 		mul=1.0;
 		count++;
 		}
-		return prob;
+		return 	prob;
 	}
 	/**
 	 * given list with all the exist node and return all the lack node

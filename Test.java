@@ -79,20 +79,20 @@ public class Test {
 		//query1
 		
 System.out.println("query1");
-Queries1 quer = new Queries1(net);
-System.out.println(quer.parseProb("P(C=run|B=set,A=true),1"));
+Queries1 quer = new Queries1(net2);
+System.out.println(quer.parseProb("P(B=true|J=true,M=true),1"));
 		
 		
 		//query2
 System.out.println("query2");			
-Queries2 quer2 = new Queries2(net);
-String s = quer2.prob("P(C=run|B=set,A=true),2");
+Queries2 quer2 = new Queries2(net2);
+String s = quer2.prob("P(B=true|J=true,M=true),1");
 System.out.println(s);
 
 //query3
 System.out.println("query3");
-Queries3 quer3 = new Queries3(net);
-String prob = quer3.prob("P(C=run|B=set,A=true),3");
+Queries3 quer3 = new Queries3(net2);
+String prob = quer3.prob("P(B=true|J=true,M=true),1");
 	System.out.println(prob);
 	
 	

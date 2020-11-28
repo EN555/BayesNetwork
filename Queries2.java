@@ -140,12 +140,7 @@ import org.w3c.dom.ls.LSInput;
 						counter++;
 					}
 			
-				String cons = String.valueOf(numerator/denominator); 
-				String rem ="," +numOfAdd +"," + numOfMul; 
-				
-				if(cons.length() > 7) 	//return only five digits after decimal point
-					return cons.substring(0 , 7) + rem;
-				return 	cons +rem;
+				return 	String.format("%.5f", numerator/denominator) +"," +numOfAdd +"," + numOfMul;
 			}
 		
 		public boolean isContainState(String big ,String state) {

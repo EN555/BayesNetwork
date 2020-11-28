@@ -135,46 +135,15 @@ public class Queries3 extends Queries2{
 				denominator+= (Double)helper.mat[i][1];
 				counter++;
 					}
-					
-			String cons = String.valueOf(numerator/denominator); 
-			String rem ="," +numOfAdd +"," + numOfMul; 
-						
-			if(cons.length() > 7) 	//return only five digits after decimal point
-					return cons.substring(0 , 7) + rem;
-			return 	cons +rem;
+				
+			return String.format("%.5f", numerator/denominator) +"," +numOfAdd +"," + numOfMul;
 					}
 				
-	
-//	public LinkedList<Node> optimalOrderList(LinkedList<LinkedList<Node>> listOfList){
-//		
-//		LinkedList<Node> optimal = new LinkedList<Node>();
-//		
-//		
-//		return optimal;
-//	}
-//	
-	/**
-	 * do join and margin for all the list of list of simple order
-	 * @param list
-	 * @return
-	 */
-//	public int numJoinMarg(LinkedList<LinkedList<CptNodes>> list) {
-//		int operation = 0;
-//		
-//		
-//		
-//		return operation;
-//	}
 	/**
 	 * get list of cpt and return join cpt
 	 * @param list
 	 * @return
 	 */
-//	public CptNodes joinList(LinkedList<CptNodes> list) {
-//		
-//		
-//	}
-	
 	public LinkedList<CptNodes> joinCoupleMinMultiplicationCpt(LinkedList<CptNodes> list) {
 		
 		CptNodes arrA1 [] = new CptNodes[list.size()]; 
